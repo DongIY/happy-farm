@@ -1,0 +1,3314 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>开心农场</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #5D4037 0%, #3E2723 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            background: rgba(0,0,0,0.5);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 99;
+            backdrop-filter: blur(10px);
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        .stat-box { display: flex; align-items: center; gap: 8px; font-weight: bold; font-size: 0.9rem; }
+        .stat-value { color: #FFD700; font-size: 1.2rem; }
+        #xp-bar-wrap { width: 120px; height: 10px; background: #333; border-radius: 5px; overflow: hidden; }
+        #xp-bar { height: 100%; background: linear-gradient(90deg, #4CAF50, #8BC34A); width: 0%; transition: width 0.3s; }
+        .xp-text { font-size: 0.7rem; color: #aaa; }
+
+        /* Tabs */
+        .tab-bar {
+            display: flex;
+            justify-content: center;
+            background: rgba(0,0,0,0.3);
+            overflow-x: auto;
+        }
+        .tab-btn {
+            padding: 10px 18px;
+            background: transparent;
+            color: #aaa;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .tab-btn:hover { color: #fff; }
+        .tab-btn.active { color: #4CAF50; border-bottom-color: #4CAF50; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Main */
+        .page-body { max-width: 960px; margin: 0 auto; padding: 12px; }
+
+        /* Shop */
+        .shop { background: rgba(255,255,255,0.08); padding: 12px; border-radius: 12px; margin-bottom: 12px; }
+        .shop h3 { text-align: center; margin-bottom: 8px; font-size: 0.9rem; color: #ccc; }
+        .seed-list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
+        .seed-item {
+            background: rgba(0,0,0,0.4);
+            padding: 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            min-width: 100px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .seed-item:hover { background: rgba(0,0,0,0.6); }
+        .seed-item.selected { border-color: #4CAF50; background: rgba(76,175,80,0.2); }
+        .seed-item.locked { opacity: 0.4; cursor: not-allowed; }
+        .seed-name { font-weight: bold; font-size: 0.85rem; }
+        .seed-meta { font-size: 0.72rem; color: #aaa; }
+        .seed-price-live { font-size: 0.72rem; font-weight: bold; }
+        .price-up { color: #f44336; }
+        .price-down { color: #4CAF50; }
+        .seed-feed-tag { font-size: 0.65rem; color: #FF9800; margin-top: 2px; }
+        .seed-item.rare-seed { border-color: #FFD700; background: rgba(255,215,0,0.15); }
+        .seed-item.rare-seed:hover { background: rgba(255,215,0,0.25); }
+        .seed-item.rare-seed.selected { border-color: #FFF176; background: rgba(255,215,0,0.3); }
+        .rare-seed-tag { font-size: 0.62rem; color: #FFD700; font-weight: bold; margin-top: 2px; }
+        .animal-item.rare-animal { border-color: #FFD700; background: rgba(255,215,0,0.15); }
+        .animal-item.rare-animal:hover { background: rgba(255,215,0,0.25); }
+        .animal-item.rare-animal.selected { border-color: #FFF176; background: rgba(255,215,0,0.3); }
+
+        /* Controls */
+        .controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+        .controls button {
+            background: #2196F3;
+            color: #fff;
+            border: none;
+            padding: 7px 14px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .controls button:hover { background: #0b7dda; }
+        .controls button:disabled { background: #555; cursor: not-allowed; }
+        .btn-danger { background: #f44336 !important; }
+        .btn-danger:hover { background: #d32f2f !important; }
+        .btn-orange { background: #FF9800 !important; }
+        .btn-orange:hover { background: #F57C00 !important; }
+
+        /* Farm Grid */
+        .farm-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            background: rgba(0,0,0,0.2);
+            padding: 12px;
+            border-radius: 12px;
+        }
+        .plot {
+            aspect-ratio: 1;
+            background: #795548;
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            transition: transform 0.1s, background 0.2s;
+        }
+        .plot:hover { transform: scale(1.04); background: #5D4037; }
+        .plot.locked { background: #444; cursor: not-allowed; opacity: 0.6; }
+        .plot.locked::after { content: '🔒'; font-size: 1.5rem; }
+        .progress-bar { width: 80%; height: 5px; background: #333; border-radius: 3px; position: absolute; bottom: 6px; overflow: hidden; }
+        .progress { height: 100%; background: #4CAF50; }
+        .ready-mark {
+            position: absolute; top: -6px; right: -6px;
+            background: #FFD700; color: #000; border-radius: 50%;
+            width: 20px; height: 20px;
+            display: flex; justify-content: center; align-items: center;
+            font-weight: bold; font-size: 11px;
+            animation: bounce 1s infinite;
+        }
+        @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+
+        /* Ranch Grid */
+        .ranch-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            background: rgba(0,0,0,0.2);
+            padding: 12px;
+            border-radius: 12px;
+        }
+        .pen {
+            aspect-ratio: 1;
+            background: #6D4C41;
+            border-radius: 10px;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+            transition: transform 0.1s, background 0.2s;
+            padding: 4px;
+        }
+        .pen:hover { transform: scale(1.04); background: #5D4037; }
+        .pen.locked { background: #444; cursor: not-allowed; opacity: 0.6; }
+        .pen.locked::after { content: '🔒'; font-size: 1.5rem; }
+        .pen-weight { font-size: 0.65rem; color: #FFD700; margin-top: 2px; }
+        .pen-feed-btn {
+            font-size: 0.6rem;
+            background: #FF9800;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 6px;
+            cursor: pointer;
+            position: absolute;
+            bottom: 6px;
+        }
+        .pen-feed-btn:hover { background: #F57C00; }
+
+        /* Feed Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: #2d2d2d;
+            border-radius: 14px;
+            padding: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal h3 { margin-bottom: 12px; text-align: center; }
+        .modal-close {
+            float: right;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 1.3rem;
+            cursor: pointer;
+        }
+        .feed-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border: 2px solid transparent;
+        }
+        .feed-option:hover { background: rgba(255,255,255,0.12); }
+        .feed-option.best-feed { border-color: #FFD700; }
+        .feed-info { flex: 1; }
+        .feed-info .feed-name { font-weight: bold; font-size: 0.95rem; }
+        .feed-info .feed-detail { font-size: 0.78rem; color: #aaa; }
+        .feed-info .feed-bonus { font-size: 0.78rem; color: #4CAF50; font-weight: bold; }
+        .feed-best-tag { font-size: 0.65rem; background: #FFD700; color: #000; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .feed-count { font-size: 0.85rem; color: #FFD700; font-weight: bold; }
+
+        /* Backpack */
+        .backpack-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 8px;
+        }
+        .bp-item {
+            background: rgba(0,0,0,0.4);
+            border-radius: 10px;
+            padding: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            position: relative;
+        }
+        .bp-item:hover { background: rgba(0,0,0,0.6); border-color: #FFD700; }
+        .bp-item .bp-icon { line-height: 1; }
+        .bp-item .bp-name { font-weight: bold; font-size: 0.82rem; margin: 3px 0; }
+        .bp-item .bp-weight { font-size: 0.75rem; color: #FFD700; }
+        .bp-item .bp-sell-price { font-size: 0.75rem; }
+        .bp-item .bp-type-tag { font-size: 0.6rem; padding: 1px 5px; border-radius: 3px; display: inline-block; margin-top: 2px; }
+        .bp-empty { text-align: center; color: #888; padding: 30px; font-size: 1rem; }
+        .bp-controls { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; align-items: center; }
+        .bp-controls button { background: #FF9800; color: #fff; border: none; padding: 7px 14px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; font-weight: bold; }
+        .bp-controls button:hover { background: #F57C00; }
+        .bp-count { color: #aaa; font-size: 0.85rem; }
+
+        /* Market */
+        .market-panel { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 12px; }
+        .market-type-tabs { display: flex; gap: 6px; margin-bottom: 10px; }
+        .market-type-tabs button {
+            background: rgba(255,255,255,0.1);
+            color: #ccc;
+            border: 1px solid #555;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .market-type-tabs button.active { background: #4CAF50; color: #fff; border-color: #4CAF50; }
+        .market-selector { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+        .market-selector button {
+            background: rgba(255,255,255,0.1);
+            color: #ccc;
+            border: 1px solid #555;
+            padding: 5px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        .market-selector button.active { background: #4CAF50; color: #fff; border-color: #4CAF50; }
+        .chart-container { position: relative; width: 100%; height: 260px; background: #1a1a2e; border-radius: 8px; overflow: hidden; }
+        canvas { display: block; }
+        .chart-info { display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.8rem; color: #aaa; }
+        .chart-price { font-size: 1.2rem; font-weight: bold; }
+
+        /* Animal Shop */
+        .animal-list { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 5px; }
+        .animal-item {
+            background: rgba(0,0,0,0.4);
+            padding: 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            min-width: 110px;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+        .animal-item:hover { background: rgba(0,0,0,0.6); }
+        .animal-item.selected { border-color: #FF9800; background: rgba(255,152,0,0.2); }
+        .animal-item.locked { opacity: 0.4; cursor: not-allowed; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(0,0,0,0.85); color: #fff;
+            padding: 10px 22px; border-radius: 20px;
+            font-size: 0.9rem; opacity: 0; transition: opacity 0.3s;
+            pointer-events: none; z-index: 1000;
+            white-space: nowrap; max-width: 90%;
+        }
+        .toast.show { opacity: 1; }
+
+        ::-webkit-scrollbar { height: 6px; width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #666; border-radius: 3px; }
+
+        .section-title { font-size: 0.9rem; color: #ccc; margin-bottom: 8px; text-align: center; }
+
+        /* Automation */
+        .auto-panel { background: rgba(0,0,0,0.3); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+        .auto-panel h4 { font-size: 0.92rem; margin-bottom: 10px; color: #FFD700; }
+        .auto-master { display:flex; align-items:center; gap:10px; margin-bottom:14px; padding:10px 14px; background:rgba(255,255,255,0.08); border-radius:10px; }
+        .auto-master label { font-size:1rem; font-weight:bold; cursor:pointer; }
+        .auto-dot { width:10px; height:10px; border-radius:50%; background:#f44336; display:inline-block; }
+        .auto-dot.on { background:#4CAF50; animation:pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+        .auto-row { display:flex; align-items:center; gap:8px; padding:7px 10px; background:rgba(255,255,255,0.04); border-radius:8px; margin-bottom:5px; flex-wrap:wrap; }
+        .auto-row label { font-size:0.8rem; }
+        .auto-row select, .auto-row input[type=number] { background:#333; color:#fff; border:1px solid #555; border-radius:6px; padding:4px 8px; font-size:0.78rem; }
+        .auto-row select { min-width:80px; }
+        .auto-row input[type=number] { width:65px; }
+        .auto-chk { width:16px; height:16px; accent-color:#4CAF50; cursor:pointer; }
+        .auto-sell-row { display:flex; align-items:center; gap:8px; padding:5px 10px; background:rgba(255,255,255,0.04); border-radius:8px; margin-bottom:4px; }
+        .auto-sell-row label { font-size:0.78rem; flex:1; }
+        .auto-sell-row input[type=number] { background:#333; color:#fff; border:1px solid #555; border-radius:6px; padding:3px 6px; font-size:0.76rem; width:65px; }
+        .log-box { background:#111; border-radius:10px; padding:10px; max-height:280px; overflow-y:auto; font-family:'Consolas','Courier New',monospace; font-size:0.73rem; line-height:1.6; }
+        .log-line { padding:1px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+        .log-time { color:#666; }
+        .log-act { color:#64B5F6; }
+        .log-sell { color:#4CAF50; }
+        .log-buy { color:#FF9800; }
+        .log-feed { color:#CE93D8; }
+        .log-harv { color:#FFD700; }
+        .log-warn { color:#f44336; }
+        .log-ctrls { display:flex; gap:8px; margin-bottom:8px; align-items:center; }
+        .log-ctrls button { background:rgba(255,255,255,0.1); color:#ccc; border:1px solid #555; padding:4px 10px; border-radius:6px; cursor:pointer; font-size:0.73rem; }
+        .log-stats { font-size:0.78rem; color:#aaa; margin-bottom:8px; }
+
+        /* Orders */
+        .order-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+        .order-header h3 { font-size:0.95rem; color:#ccc; }
+        .order-timer { font-size:0.82rem; color:#FF9800; font-weight:bold; }
+        .order-timer .timer-urgent { color:#f44336; animation:pulse 1s infinite; }
+        .order-list { display:flex; flex-direction:column; gap:10px; }
+        .order-card {
+            background: rgba(0,0,0,0.35);
+            border-radius: 12px;
+            padding: 14px;
+            border-left: 4px solid #FF9800;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .order-card:hover { background: rgba(0,0,0,0.5); }
+        .order-card.fulfilled { border-left-color: #4CAF50; }
+        .order-card.expired { border-left-color: #555; opacity:0.5; }
+        .order-npc { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+        .order-npc-avatar { font-size:2rem; width:44px; height:44px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.08); border-radius:50%; flex-shrink:0; }
+        .order-npc-info { flex:1; }
+        .order-npc-name { font-weight:bold; font-size:0.92rem; }
+        .order-npc-title { font-size:0.7rem; color:#aaa; }
+        .order-reason { font-size:0.78rem; color:#CE93D8; font-style:italic; margin-bottom:8px; padding:6px 10px; background:rgba(206,147,216,0.08); border-radius:6px; line-height:1.5; }
+        .order-items { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+        .order-item-tag {
+            display:flex; align-items:center; gap:4px;
+            background: rgba(255,255,255,0.08);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+        .order-item-tag .oi-have { color:#4CAF50; font-weight:bold; }
+        .order-item-tag .oi-need { color:#f44336; font-weight:bold; }
+        .order-reward { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+        .order-reward-coins { font-size:1rem; font-weight:bold; color:#FFD700; }
+        .order-reward-xp { font-size:0.82rem; color:#8BC34A; }
+        .order-premium { font-size:0.72rem; color:#FF9800; }
+        .order-deliver-btn {
+            width:100%; padding:8px; border:none; border-radius:8px;
+            font-size:0.88rem; font-weight:bold; cursor:pointer;
+            transition: all 0.2s;
+        }
+        .order-deliver-btn.ready { background:#4CAF50; color:#fff; }
+        .order-deliver-btn.ready:hover { background:#388E3C; }
+        .order-deliver-btn.not-ready { background:#555; color:#999; cursor:not-allowed; }
+        .order-empty { text-align:center; color:#666; padding:40px 20px; font-size:0.9rem; }
+        .order-xp-bonus { position:absolute; top:10px; right:12px; font-size:0.68rem; background:#8BC34A; color:#fff; padding:2px 8px; border-radius:10px; }
+
+        /* Talent System */
+        .talent-modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            z-index: 300;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .talent-modal-overlay.show { display: flex; }
+        .talent-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 6px;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(255,215,0,0.5);
+        }
+        .talent-subtitle {
+            font-size: 0.82rem;
+            color: #aaa;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+        .talent-cards {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 700px;
+            padding: 0 12px;
+        }
+        .talent-card {
+            background: rgba(40,40,60,0.95);
+            border: 2px solid #555;
+            border-radius: 14px;
+            padding: 16px 14px;
+            width: 200px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .talent-card:hover {
+            transform: translateY(-4px) scale(1.03);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+        }
+        .talent-card.quality-normal { border-color: #78909C; }
+        .talent-card.quality-normal:hover { border-color: #B0BEC5; box-shadow: 0 0 20px rgba(176,190,197,0.3); }
+        .talent-card.quality-rare { border-color: #42A5F5; }
+        .talent-card.quality-rare:hover { border-color: #64B5F6; box-shadow: 0 0 20px rgba(66,165,245,0.4); }
+        .talent-card.quality-legend { border-color: #FFD700; background: rgba(60,50,20,0.95); }
+        .talent-card.quality-legend:hover { border-color: #FFF176; box-shadow: 0 0 25px rgba(255,215,0,0.5); }
+        .talent-card.quality-legend::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(transparent, rgba(255,215,0,0.05), transparent, rgba(255,215,0,0.05));
+            animation: talentSpin 4s linear infinite;
+        }
+        @keyframes talentSpin { 100% { transform: rotate(360deg); } }
+        .talent-quality-tag {
+            display: inline-block;
+            font-size: 0.65rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            position: relative;
+            z-index: 1;
+        }
+        .talent-quality-tag.q-normal { background: #546E7A; color: #fff; }
+        .talent-quality-tag.q-rare { background: #1E88E5; color: #fff; }
+        .talent-quality-tag.q-legend { background: linear-gradient(135deg, #FFD700, #FFA000); color: #000; }
+        .talent-icon {
+            font-size: 2.2rem;
+            margin: 6px 0;
+            position: relative;
+            z-index: 1;
+        }
+        .talent-name {
+            font-weight: bold;
+            font-size: 0.95rem;
+            margin-bottom: 6px;
+            position: relative;
+            z-index: 1;
+        }
+        .talent-desc {
+            font-size: 0.78rem;
+            color: #bbb;
+            line-height: 1.5;
+            position: relative;
+            z-index: 1;
+        }
+        .talent-value {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #4CAF50;
+            margin-top: 6px;
+            position: relative;
+            z-index: 1;
+        }
+        .talent-list-panel {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 12px;
+        }
+        .talent-list-panel h4 {
+            font-size: 0.92rem;
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+        .talent-owned-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 8px;
+            margin-bottom: 4px;
+            font-size: 0.8rem;
+        }
+        .talent-owned-icon { font-size: 1.2rem; }
+        .talent-owned-name { font-weight: bold; flex: 1; }
+        .talent-owned-desc { color: #aaa; font-size: 0.72rem; }
+        .talent-owned-quality { font-size: 0.6rem; padding: 1px 6px; border-radius: 8px; font-weight: bold; }
+        .talent-empty { text-align: center; color: #666; padding: 20px; font-size: 0.85rem; }
+        .missed-talent-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: rgba(255,152,0,0.06);
+            border-radius: 8px;
+            margin-bottom: 5px;
+            font-size: 0.8rem;
+            border: 1px solid rgba(255,152,0,0.15);
+            transition: all 0.2s;
+        }
+        .missed-talent-item:hover { background: rgba(255,152,0,0.12); }
+        .missed-learn-btn {
+            background: linear-gradient(135deg, #FF9800, #F57C00);
+            color: #fff;
+            border: none;
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 0.72rem;
+            font-weight: bold;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s;
+        }
+        .missed-learn-btn:hover { filter: brightness(1.1); transform: scale(1.05); }
+        .missed-learn-btn:disabled { background: #555; cursor: not-allowed; filter: none; transform: none; }
+        .invest-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            background: rgba(255,152,0,0.08);
+            border-radius: 8px;
+            margin-bottom: 4px;
+            font-size: 0.78rem;
+            border-left: 3px solid #FF9800;
+        }
+        .invest-timer { color: #FF9800; font-weight: bold; }
+        .invest-profit { color: #4CAF50; font-weight: bold; }
+
+        /* Challenge Timer Bar */
+        .challenge-bar {
+            background: linear-gradient(90deg, #1a1a2e 0%, #16213e 100%);
+            padding: 8px 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid rgba(255,215,0,0.3);
+            position: sticky;
+            top: 0;
+            z-index: 101;
+        }
+        .challenge-timer {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .challenge-timer .timer-value {
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 1.4rem;
+            color: #4CAF50;
+            text-shadow: 0 0 8px rgba(76,175,80,0.5);
+            min-width: 70px;
+            text-align: center;
+        }
+        .challenge-timer .timer-value.urgent {
+            color: #f44336;
+            animation: timerPulse 0.5s infinite;
+            text-shadow: 0 0 12px rgba(244,67,54,0.7);
+        }
+        .challenge-timer .timer-value.warning {
+            color: #FF9800;
+            animation: timerPulse 1s infinite;
+            text-shadow: 0 0 10px rgba(255,152,0,0.6);
+        }
+        @keyframes timerPulse { 0%,100%{opacity:1} 50%{opacity:0.5} }
+        .challenge-goal {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+        }
+        .challenge-goal .goal-label { color: #aaa; }
+        .challenge-goal .goal-value { color: #FFD700; font-weight: bold; font-size: 1rem; }
+        .challenge-goal .goal-check { color: #4CAF50; font-weight: bold; }
+        .challenge-goal .goal-miss { color: #f44336; font-weight: bold; }
+        .challenge-progress-wrap {
+            width: 200px;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .challenge-progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+        }
+        .challenge-progress-fill.tier2 { background: linear-gradient(90deg, #2196F3, #03A9F4); }
+        .challenge-progress-fill.tier3 { background: linear-gradient(90deg, #9C27B0, #E040FB); }
+        .challenge-progress-fill.tier4 { background: linear-gradient(90deg, #FFD700, #FF6F00); }
+        .challenge-next-tier {
+            font-size: 0.7rem;
+            color: #aaa;
+        }
+        .challenge-next-tier b { color: #FFD700; }
+
+        /* Victory / Defeat Modal */
+        .result-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.92);
+            z-index: 500;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .result-overlay.show { display: flex; }
+        .result-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
+            padding: 30px 40px;
+            max-width: 520px;
+            width: 90%;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #333;
+        }
+        .result-card.victory { border-color: #FFD700; }
+        .result-card.defeat { border-color: #f44336; }
+        .result-card.victory::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(transparent, rgba(255,215,0,0.03), transparent, rgba(255,215,0,0.03));
+            animation: talentSpin 6s linear infinite;
+        }
+        .result-title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 6px;
+            position: relative;
+            z-index: 1;
+        }
+        .result-title.victory-title { color: #FFD700; text-shadow: 0 0 20px rgba(255,215,0,0.5); }
+        .result-title.defeat-title { color: #f44336; text-shadow: 0 0 20px rgba(244,67,54,0.5); }
+        .result-rank {
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin: 10px 0;
+            padding: 6px 20px;
+            border-radius: 20px;
+            display: inline-block;
+            position: relative;
+            z-index: 1;
+        }
+        .rank-bronze { background: linear-gradient(135deg, #CD7F32, #8B4513); color: #fff; }
+        .rank-silver { background: linear-gradient(135deg, #C0C0C0, #808080); color: #fff; }
+        .rank-gold { background: linear-gradient(135deg, #FFD700, #FFA000); color: #000; }
+        .rank-diamond { background: linear-gradient(135deg, #E040FB, #7C4DFF, #00BCD4); color: #fff; animation: rankShine 2s ease infinite; }
+        @keyframes rankShine { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.3)} }
+        .result-coins {
+            font-size: 1.5rem;
+            color: #FFD700;
+            font-weight: bold;
+            margin: 12px 0;
+            position: relative;
+            z-index: 1;
+        }
+        .result-essay {
+            font-size: 0.9rem;
+            color: #ccc;
+            line-height: 1.8;
+            margin: 14px 0;
+            padding: 14px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 12px;
+            text-align: left;
+            position: relative;
+            z-index: 1;
+        }
+        .result-stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin: 12px 0;
+            font-size: 0.8rem;
+            color: #aaa;
+            position: relative;
+            z-index: 1;
+        }
+        .result-stats b { color: #FFD700; }
+        .result-btn {
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: #fff;
+            border: none;
+            padding: 12px 36px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.2s;
+            position: relative;
+            z-index: 1;
+        }
+        .result-btn:hover { transform: scale(1.05); filter: brightness(1.1); }
+    </style>
+</head>
+<body>
+
+<div class="challenge-bar" id="challenge-bar">
+    <div class="challenge-timer">
+        <span>⏱️ 剩余</span>
+        <span class="timer-value" id="challenge-time">30:00</span>
+    </div>
+    <div class="challenge-goal">
+        <span class="goal-label">💰 当前金币:</span>
+        <span class="goal-value" id="challenge-coins">300</span>
+    </div>
+    <div class="challenge-progress-wrap">
+        <div class="challenge-progress-fill" id="challenge-progress" style="width:0%"></div>
+    </div>
+    <div class="challenge-goal">
+        <span class="goal-label">🎯 目标:</span>
+        <span id="challenge-target-text" style="color:#FFD700;font-weight:bold;">100万</span>
+    </div>
+    <div class="challenge-next-tier" id="challenge-next-tier"></div>
+</div>
+
+<header>
+    <div class="stat-box">
+        <span>Lv.<span id="level-display">1</span></span>
+        <div id="xp-bar-wrap"><div id="xp-bar"></div></div>
+        <span class="xp-text" id="xp-text">0/100</span>
+    </div>
+    <div class="stat-box">
+        <span class="stat-value" id="coins-display">&#x1F4B0; 500</span>
+    </div>
+    <div class="stat-box">
+        <span style="font-size:0.8rem; color:#aaa;" id="bp-count-header">&#x1F392; 0</span>
+    </div>
+</header>
+
+<div class="tab-bar">
+    <button class="tab-btn active" data-tab="farm">&#x1F331; &#x519C;&#x573A;</button>
+    <button class="tab-btn" data-tab="ranch">&#x1F404; &#x7267;&#x573A;</button>
+    <button class="tab-btn" data-tab="backpack">&#x1F392; &#x80CC;&#x5305;</button>
+    <button class="tab-btn" data-tab="market">&#x1F4C8; &#x884C;&#x60C5;</button>
+    <button class="tab-btn" data-tab="auto">&#x2699;&#xFE0F; &#x81EA;&#x52A8;&#x5316;</button>
+    <button class="tab-btn" data-tab="orders">&#x1F4DC; &#x8BA2;&#x5355;</button>
+    <button class="tab-btn" data-tab="talents">&#x2B50; &#x5929;&#x8D4B;</button>
+</div>
+
+<div class="page-body">
+    <!-- Farm Tab -->
+    <div id="tab-farm" class="tab-content active">
+        <div class="shop">
+            <h3>&#x9009;&#x62E9;&#x79CD;&#x5B50;&#x540E;&#x70B9;&#x51FB;&#x7A7A;&#x5730;&#x79CD;&#x690D;</h3>
+            <div class="seed-list" id="seed-list"></div>
+        </div>
+        <div class="controls">
+            <button id="btn-unlock-plot" onclick="unlockPlot()">&#x6269;&#x5EFA;&#x7530;&#x5730; (&#x1F4B0; <span id="unlock-cost">200</span>)</button>
+            <button class="btn-danger" onclick="clearCropSelection()">&#x53D6;&#x6D88;&#x9009;&#x62E9;</button>
+        </div>
+        <div class="farm-grid" id="farm-grid"></div>
+    </div>
+
+    <!-- Ranch Tab -->
+    <div id="tab-ranch" class="tab-content">
+        <div class="shop">
+            <h3>&#x9009;&#x62E9;&#x52A8;&#x7269;&#x540E;&#x70B9;&#x51FB;&#x7A7A;&#x680F;&#x653E;&#x7F6E;</h3>
+            <div class="animal-list" id="animal-list"></div>
+        </div>
+        <div class="controls">
+            <button id="btn-unlock-pen" onclick="unlockPen()">&#x6269;&#x5EFA;&#x680F;&#x820D; (&#x1F4B0; <span id="pen-unlock-cost">300</span>)</button>
+            <button class="btn-danger" onclick="clearAnimalSelection()">&#x53D6;&#x6D88;&#x9009;&#x62E9;</button>
+        </div>
+        <div class="ranch-grid" id="ranch-grid"></div>
+    </div>
+
+    <!-- Backpack Tab -->
+    <div id="tab-backpack" class="tab-content">
+        <div class="bp-controls">
+            <button onclick="sellAllBackpack()">&#x5168;&#x90E8;&#x51FA;&#x552E;</button>
+            <button onclick="sellAllCrops()" style="background:#4CAF50;">&#x5356;&#x83DC;</button>
+            <button onclick="sellAllMeat()" style="background:#e91e63;">&#x5356;&#x8089;</button>
+            <span class="bp-count" id="bp-summary"></span>
+        </div>
+        <div id="backpack-grid" class="backpack-grid"></div>
+    </div>
+
+    <!-- Market Tab -->
+    <div id="tab-market" class="tab-content">
+        <div class="market-panel">
+            <div class="market-type-tabs" id="market-type-tabs">
+                <button class="active" onclick="setMarketType('crop')">&#x1F33E; &#x519C;&#x4EA7;&#x54C1;</button>
+                <button onclick="setMarketType('animal')">&#x1F969; &#x755C;&#x4EA7;&#x54C1;</button>
+            </div>
+            <div class="market-selector" id="market-selector"></div>
+            <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:6px;">
+                <span id="market-item-name" style="font-size:1rem;font-weight:bold;"></span>
+                <span id="market-current-price" class="chart-price"></span>
+                <span id="market-price-change" style="font-size:0.85rem;"></span>
+            </div>
+            <div class="chart-container">
+                <canvas id="chart-canvas"></canvas>
+            </div>
+            <div class="chart-info">
+                <span id="chart-high"></span>
+                <span id="chart-low"></span>
+                <span id="chart-avg"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Automation Tab -->
+    <div id="tab-auto" class="tab-content">
+        <div class="auto-master">
+            <span class="auto-dot" id="auto-dot"></span>
+            <label><input type="checkbox" id="auto-master-chk" class="auto-chk" onchange="toggleAuto()"> &#x542F;&#x7528;&#x81EA;&#x52A8;&#x5316;&#x7BA1;&#x7406;</label>
+        </div>
+        <div class="auto-panel">
+            <h4>&#x1F33E; &#x81EA;&#x52A8;&#x79CD;&#x690D;&#x4E0E;&#x6536;&#x83B7;</h4>
+            <div class="auto-row">
+                <input type="checkbox" class="auto-chk" id="auto-farm-on" checked>
+                <label>&#x542F;&#x7528;</label>
+                <label>&#x79CD;&#x690D;:</label>
+                <select id="auto-farm-crop"></select>
+            </div>
+            <div style="font-size:0.7rem;color:#888;padding:3px 10px;">&#x7A7A;&#x5730;&#x81EA;&#x52A8;&#x79CD;&#x690D;&#xFF0C;&#x6210;&#x719F;&#x540E;&#x81EA;&#x52A8;&#x6536;&#x83B7;&#x5165;&#x80CC;&#x5305;</div>
+        </div>
+        <div class="auto-panel">
+            <h4>&#x1F404; &#x81EA;&#x52A8;&#x8D2D;&#x4E70;&#x52A8;&#x7269;</h4>
+            <div class="auto-row">
+                <input type="checkbox" class="auto-chk" id="auto-ranch-on" checked>
+                <label>&#x542F;&#x7528;</label>
+                <label>&#x52A8;&#x7269;:</label>
+                <select id="auto-ranch-animal"></select>
+            </div>
+            <div style="font-size:0.7rem;color:#888;padding:3px 10px;">&#x7A7A;&#x680F;&#x81EA;&#x52A8;&#x8D2D;&#x4E70;&#xFF0C;&#x6210;&#x719F;&#x81EA;&#x52A8;&#x51FA;&#x680F;&#x5165;&#x80CC;&#x5305;</div>
+        </div>
+        <div class="auto-panel">
+            <h4>&#x1F37D;&#xFE0F; &#x81EA;&#x52A8;&#x6295;&#x5582;&#x7B56;&#x7565;</h4>
+            <div id="auto-feed-list"></div>
+            <div style="font-size:0.7rem;color:#888;padding:3px 10px;">&#x80CC;&#x5305;&#x6709;&#x5BF9;&#x5E94;&#x9972;&#x6599;&#x65F6;&#x81EA;&#x52A8;&#x6295;&#x5582;&#xFF0C;&#x8BBE;&#x4E3A;0&#x6B21;=&#x4E0D;&#x81EA;&#x52A8;&#x5582;</div>
+        </div>
+        <div class="auto-panel">
+            <h4>&#x1F4C8; &#x81EA;&#x52A8;&#x76EF;&#x76D8;&#x5356;&#x51FA;</h4>
+            <div style="font-size:0.7rem;color:#888;padding:2px 10px 8px;">&#x884C;&#x60C5;&#x4EF7;&#x2265;&#x9608;&#x503C;&#x65F6;&#x81EA;&#x52A8;&#x5356;&#x51FA;&#x80CC;&#x5305;&#x4E2D;&#x5BF9;&#x5E94;&#x7269;&#x54C1;&#xFF1B;0=&#x6C38;&#x4E0D;&#x81EA;&#x52A8;&#x5356;</div>
+            <div style="font-size:0.78rem;color:#aaa;margin-bottom:5px;padding-left:10px;">&#x1F33E; &#x519C;&#x4EA7;&#x54C1;</div>
+            <div id="auto-sell-crops"></div>
+            <div style="font-size:0.78rem;color:#aaa;margin:6px 0 5px;padding-left:10px;">&#x1F969; &#x755C;&#x4EA7;&#x54C1;</div>
+            <div id="auto-sell-animals"></div>
+        </div>
+        <div class="auto-panel">
+            <h4>&#x1F4CB; &#x64CD;&#x4F5C;&#x65E5;&#x5FD7;</h4>
+            <div class="log-stats" id="log-stats"></div>
+            <div class="log-ctrls">
+                <button onclick="clearAutoLog()">&#x6E05;&#x7A7A;&#x65E5;&#x5FD7;</button>
+                <span style="font-size:0.7rem;color:#666;" id="log-count"></span>
+            </div>
+            <div class="log-box" id="log-box"></div>
+        </div>
+    </div>
+
+    <!-- Orders Tab -->
+    <div id="tab-orders" class="tab-content">
+        <div class="order-header">
+            <h3>&#x1F4DC; NPC&#x8BA2;&#x5355;&#x677F;</h3>
+            <span class="order-timer" id="order-timer"></span>
+        </div>
+        <div class="order-list" id="order-list"></div>
+    </div>
+
+    <!-- Talents Tab -->
+    <div id="tab-talents" class="tab-content">
+        <div class="talent-list-panel">
+            <h4>&#x2B50; &#x5DF2;&#x89E3;&#x9501;&#x5929;&#x8D4B; <span id="talent-count" style="font-size:0.75rem;color:#aaa;"></span></h4>
+            <div id="talent-owned-list"></div>
+        </div>
+        <div class="talent-list-panel" id="missed-talent-panel" style="display:none;">
+            <h4>&#x1F4DA; &#x8865;&#x5B66;&#x5929;&#x8D4B; <span id="missed-talent-count" style="font-size:0.75rem;color:#aaa;"></span></h4>
+            <div style="font-size:0.72rem;color:#FF9800;margin-bottom:8px;">&#x4F60;&#x6709;&#x672A;&#x4F7F;&#x7528;&#x7684;&#x5929;&#x8D4B;&#x9009;&#x62E9;&#x6B21;&#x6570;&#xFF0C;&#x70B9;&#x51FB;&#x4E0B;&#x65B9;&#x6309;&#x94AE;&#x8FDB;&#x884C;&#x9009;&#x62E9;&#xFF08;&#x514D;&#x8D39;&#xFF09;</div>
+            <button class="missed-learn-btn" onclick="showTalentModal()" id="btn-use-pending-talent" style="width:100%;padding:10px;font-size:0.9rem;border-radius:10px;margin-top:4px;">&#x2B50; &#x7ACB;&#x5373;&#x9009;&#x62E9;&#x5929;&#x8D4B;</button>
+        </div>
+        <div class="talent-list-panel">
+            <h4>&#x1F4B0; &#x6295;&#x8D44;&#x8FDB;&#x884C;&#x4E2D;</h4>
+            <div id="invest-list"></div>
+        </div>
+    </div>
+</div>
+
+<div id="talent-modal" class="talent-modal-overlay">
+    <div class="talent-title">&#x2B50; &#x5347;&#x7EA7;&#x5929;&#x8D4B;&#x9009;&#x62E9; &#x2B50;</div>
+    <div class="talent-subtitle" id="talent-modal-subtitle">&#x9009;&#x62E9;&#x4E00;&#x4E2A;&#x5929;&#x8D4B;&#xFF0C;&#x6C38;&#x4E45;&#x751F;&#x6548;</div>
+    <div class="talent-cards" id="talent-cards"></div>
+</div>
+<div id="feed-modal" class="modal-overlay">
+    <div class="modal">
+        <button class="modal-close" onclick="closeFeedModal()">&times;</button>
+        <h3 id="feed-modal-title">&#x6295;&#x5582;&#x996E;&#x6599;</h3>
+        <div id="feed-modal-body"></div>
+    </div>
+</div>
+
+<div id="result-modal" class="result-overlay">
+    <div class="result-card" id="result-card">
+        <div class="result-title" id="result-title"></div>
+        <div class="result-rank" id="result-rank"></div>
+        <div class="result-coins" id="result-coins"></div>
+        <div class="result-stats" id="result-stats"></div>
+        <div class="result-essay" id="result-essay"></div>
+        <button class="result-btn" onclick="restartGame()">🔄 再来一局</button>
+    </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+// ==================== DATA DEFINITIONS ====================
+
+/*
+ * 经济体系设计思路:
+ * - 饲料作物: 直接卖利润低, 但喂给动物后产出高价值肉类
+ * - 经济作物: 直接卖利润高, 但不能当饲料
+ * - 动物: 基础增重慢, 投喂最佳饲料后增重大且缩短成长时间, 整体收益远超直接卖菜
+ * - 示例: 大豆 成本20, 直接卖 ~35, 但喂猪后猪增重2kg(多卖120+), 净赚远超卖大豆
+ */
+
+var CROPS = {
+    wheat:    { id:'wheat',    name:'小麦',   cost:5,   baseSell:18,   time:5,   xp:3,   minLevel:1, color:'#f5deb3', icon:'\u{1F33E}', weightRange:[0.5,2.0],  isFeed:true,  feedDesc:'基础饲料' },
+    corn:     { id:'corn',     name:'玉米',   cost:10,  baseSell:30,   time:8,   xp:6,   minLevel:1, color:'#ffd700', icon:'\u{1F33D}', weightRange:[0.8,3.0],  isFeed:true,  feedDesc:'鸡的最爱' },
+    soybean:  { id:'soybean',  name:'大豆',   cost:15,  baseSell:45,   time:10,  xp:8,   minLevel:2, color:'#c8e6c9', icon:'\u{1FAD8}', weightRange:[0.3,1.5],  isFeed:true,  feedDesc:'猪的最爱' },
+    carrot:   { id:'carrot',   name:'胡萝卜', cost:12,  baseSell:40,   time:10,  xp:7,   minLevel:2, color:'#ff8c00', icon:'\u{1F955}', weightRange:[0.3,2.0],  isFeed:true,  feedDesc:'兔的最爱' },
+    grass:    { id:'grass',    name:'牧草',   cost:18,  baseSell:55,   time:12,  xp:10,  minLevel:3, color:'#66BB6A', icon:'\u{1F33F}', weightRange:[1.0,4.0],  isFeed:true,  feedDesc:'牛羊的最爱' },
+    potato:   { id:'potato',   name:'土豆',   cost:15,  baseSell:50,   time:12,  xp:9,   minLevel:3, color:'#D7CCC8', icon:'\u{1F954}', weightRange:[0.5,3.0],  isFeed:true,  feedDesc:'鹅的最爱' },
+    tomato:   { id:'tomato',   name:'番茄',   cost:60,  baseSell:200,  time:25,  xp:30,  minLevel:4, color:'#ff6347', icon:'\u{1F345}', weightRange:[0.4,3.0],  isFeed:false, feedDesc:'' },
+    strawberry:{ id:'strawberry', name:'草莓', cost:150, baseSell:500,  time:50,  xp:60,  minLevel:5, color:'#ff1493', icon:'\u{1F353}', weightRange:[0.2,1.8],  isFeed:false, feedDesc:'' },
+    watermelon:{ id:'watermelon', name:'西瓜', cost:400, baseSell:1500, time:90,  xp:120, minLevel:7, color:'#4CAF50', icon:'\u{1F349}', weightRange:[3.0,12.0], isFeed:false, feedDesc:'' }
+};
+
+/*
+ * 动物系统:
+ * - bestFeed: 最佳饲料cropId -> 1.0倍的feedWeightGain和feedTimeReduce
+ * - acceptFeeds: 可接受的饲料列表(含最佳) -> 其他饲料0.4~0.6倍效果
+ * - baseWeight: 不喂饲料的基础成熟重量(较低)
+ * - weightRange: 最终重量范围(通过喂饲料增重后)
+ * - feedWeightGain: 每次投喂最佳饲料增加的重量(kg)
+ * - feedTimeReduce: 每次投喂最佳饲料缩短的时间(秒)
+ * - maxFeeds: 最大投喂次数
+ */
+var ANIMALS = {
+    chicken: {
+        id:'chicken', name:'鸡', cost:40, baseSell:150, time:20, xp:15, minLevel:1,
+        color:'#FFF9C4', icon:'\u{1F414}',
+        baseWeight:1.5, weightRange:[1.0,6.0],
+        bestFeed:'corn', acceptFeeds:['corn','wheat','soybean'],
+        feedWeightGain:0.8, feedTimeReduce:3, maxFeeds:5,
+        feedDesc:'最爱玉米'
+    },
+    rabbit: {
+        id:'rabbit', name:'兔', cost:60, baseSell:220, time:25, xp:20, minLevel:2,
+        color:'#F5F5F5', icon:'\u{1F407}',
+        baseWeight:2.0, weightRange:[1.5,8.0],
+        bestFeed:'carrot', acceptFeeds:['carrot','grass','wheat'],
+        feedWeightGain:1.0, feedTimeReduce:3, maxFeeds:5,
+        feedDesc:'最爱胡萝卜'
+    },
+    goose: {
+        id:'goose', name:'鹅', cost:80, baseSell:300, time:30, xp:25, minLevel:3,
+        color:'#E0E0E0', icon:'\u{1FAA8}',
+        baseWeight:3.0, weightRange:[2.0,12.0],
+        bestFeed:'potato', acceptFeeds:['potato','corn','wheat','grass'],
+        feedWeightGain:1.2, feedTimeReduce:4, maxFeeds:6,
+        feedDesc:'最爱土豆'
+    },
+    pig: {
+        id:'pig', name:'猪', cost:150, baseSell:600, time:45, xp:40, minLevel:3,
+        color:'#FFCCBC', icon:'\u{1F437}',
+        baseWeight:5.0, weightRange:[3.0,25.0],
+        bestFeed:'soybean', acceptFeeds:['soybean','corn','potato','wheat'],
+        feedWeightGain:2.5, feedTimeReduce:5, maxFeeds:8,
+        feedDesc:'最爱大豆'
+    },
+    sheep: {
+        id:'sheep', name:'羊', cost:280, baseSell:1200, time:60, xp:80, minLevel:5,
+        color:'#EFEBE9', icon:'\u{1F411}',
+        baseWeight:8.0, weightRange:[5.0,35.0],
+        bestFeed:'grass', acceptFeeds:['grass','corn','wheat','carrot'],
+        feedWeightGain:3.0, feedTimeReduce:6, maxFeeds:8,
+        feedDesc:'最爱牧草'
+    },
+    cow: {
+        id:'cow', name:'牛', cost:600, baseSell:2800, time:90, xp:150, minLevel:7,
+        color:'#D7CCC8', icon:'\u{1F404}',
+        baseWeight:15.0, weightRange:[10.0,60.0],
+        bestFeed:'grass', acceptFeeds:['grass','corn','soybean','wheat','potato'],
+        feedWeightGain:5.0, feedTimeReduce:8, maxFeeds:10,
+        feedDesc:'最爱牧草'
+    }
+};
+
+// ==================== HIDDEN ITEMS (talent-only) ====================
+var HIDDEN_CROPS = {
+    goldenRice:   { id:'goldenRice',   name:'黄金稻', cost:0, baseSell:5000,  time:40,  xp:600,  minLevel:99, color:'#FFD700', icon:'🌾', weightRange:[1.0,5.0],  isFeed:false, feedDesc:'', hidden:true },
+    crystalMelon: { id:'crystalMelon', name:'水晶瓜', cost:0, baseSell:10000, time:60,  xp:1000, minLevel:99, color:'#E0F7FA', icon:'🔮', weightRange:[2.0,8.0],  isFeed:false, feedDesc:'', hidden:true },
+    rainbowBerry: { id:'rainbowBerry', name:'彩虹莓', cost:0, baseSell:18000, time:90,  xp:1500, minLevel:99, color:'#E040FB', icon:'🫐', weightRange:[0.5,3.0],  isFeed:false, feedDesc:'', hidden:true },
+    jadeLotus:    { id:'jadeLotus',    name:'翡翠莲', cost:0, baseSell:30000, time:120, xp:2500, minLevel:99, color:'#00E676', icon:'🪷', weightRange:[0.3,2.0],  isFeed:false, feedDesc:'', hidden:true }
+};
+
+var HIDDEN_ANIMALS = {
+    phoenix:      { id:'phoenix',      name:'火凤', cost:0, baseSell:25000, time:80,  xp:3000, minLevel:99, color:'#FF6D00', icon:'🦅', baseWeight:5.0, weightRange:[3.0,20.0], bestFeed:'wheat', acceptFeeds:['wheat','corn','grass'], feedWeightGain:3.0, feedTimeReduce:8, maxFeeds:6, feedDesc:'传说生物', hidden:true },
+    unicorn:      { id:'unicorn',      name:'独角兽', cost:0, baseSell:40000, time:100, xp:4000, minLevel:99, color:'#E1BEE7', icon:'🦄', baseWeight:8.0, weightRange:[5.0,30.0], bestFeed:'grass', acceptFeeds:['grass','carrot','corn'], feedWeightGain:4.0, feedTimeReduce:10, maxFeeds:8, feedDesc:'传说生物', hidden:true },
+    dragon:       { id:'dragon',       name:'小龙', cost:0, baseSell:80000, time:150, xp:6000, minLevel:99, color:'#F44336', icon:'🐉', baseWeight:12.0, weightRange:[8.0,50.0], bestFeed:'soybean', acceptFeeds:['soybean','wheat','corn','potato'], feedWeightGain:6.0, feedTimeReduce:12, maxFeeds:10, feedDesc:'传说生物', hidden:true }
+};
+
+// Register hidden items in market
+function registerHiddenInMarket() {
+    var hc = Object.keys(HIDDEN_CROPS);
+    for (var i = 0; i < hc.length; i++) {
+        var id = hc[i], c = HIDDEN_CROPS[id];
+        if (!market[id]) {
+            var hist = [];
+            for (var j = 0; j < PRICE_HISTORY_MAX; j++) hist.push(c.baseSell + (Math.random()-0.5)*c.baseSell*0.3);
+            market[id] = { current: hist[hist.length-1], history: hist, trend: 0, type: 'crop' };
+        }
+    }
+    var ha = Object.keys(HIDDEN_ANIMALS);
+    for (var i = 0; i < ha.length; i++) {
+        var id = ha[i], a = HIDDEN_ANIMALS[id];
+        if (!market[id]) {
+            var hist = [];
+            for (var j = 0; j < PRICE_HISTORY_MAX; j++) hist.push(a.baseSell + (Math.random()-0.5)*a.baseSell*0.3);
+            market[id] = { current: hist[hist.length-1], history: hist, trend: 0, type: 'animal' };
+        }
+    }
+}
+
+// ==================== CHALLENGE SYSTEM ====================
+var CHALLENGE_DURATION = 30 * 60 * 1000; // 30 minutes
+var challengeStartTime = 0;
+var challengeEnded = false;
+var challengeTotalEarned = 0; // track total earned (for stats display)
+
+var CHALLENGE_TIERS = [
+    { threshold: 1000000,   label: '🥉 百万富翁', rank: 'bronze',  rankClass: 'rank-bronze' },
+    { threshold: 5000000,   label: '🥈 千万大亨', rank: 'silver',  rankClass: 'rank-silver' },
+    { threshold: 10000000,  label: '🥇 亿万巨擘', rank: 'gold',    rankClass: 'rank-gold' },
+    { threshold: 100000000, label: '💎 传奇农神', rank: 'diamond', rankClass: 'rank-diamond' }
+];
+
+var CHALLENGE_ESSAYS = {
+    defeat: '很遗憾，时间到了，你的金库还没有突破百万大关。不过别灰心！每一位成功的农场主都是从泥巴地里摸爬滚打出来的。回顾这30分钟，你播下的每一颗种子、喂养的每一只动物，都是宝贵的经验。调整策略，合理利用自动化和市场行情，下一次你一定能做到！农场的土地永远等着你回来！',
+    bronze: '恭喜你！百万金币到手！你已经证明了自己是一位合格的农场经营者。在短短30分钟内积累百万身家，说明你对种植节奏、市场行情都有了初步的掌握。你的农场在你的管理下蒸蒸日上，从一片荒芜到生机勃勃。继续加油，更高的目标在前方等着你！',
+    silver: '五百万金币！你简直是农场界的商业奇才！你不仅精通种植和养殖，更懂得如何在市场波动中把握时机，让每一笔交易都创造最大价值。你的自动化管理堪称教科书级别，NPC订单也被你安排得明明白白。你的农场已经是镇上首屈一指的产业了，周围的农户都对你投来敬佩的目光！',
+    gold: '一千万金币！！你是当之无愧的农业帝国缔造者！你的经营才能已经超越了普通农场主的范畴，达到了企业家的高度。你精准地把控每一个生产环节，巧妙地运用天赋系统实现收益最大化，在市场的惊涛骇浪中稳如泰山。你的名字将被刻在农场名人堂上，成为后来者仰望的传奇！镇上的人都说：只要有你在，这片土地就能长出金子！',
+    diamond: '一亿金币！！！你…你到底是什么怪物级别的存在？！这已经不是普通的农场经营了，这是一场关于效率、策略和远见的完美交响乐！你把30分钟变成了一个奇迹——在别人还在纠结种什么菜的时候，你已经建立起了一个跨物种、跨市场的超级商业帝国！你的天赋运用出神入化，你的自动化策略精密得像瑞士钟表，你对市场行情的判断犹如先知。从今以后，"传奇农神"的称号属于你，它是对你超凡智慧和极致执行力的最高认可。所有人都会记住：在这片土地上，曾经有一位农神，用30分钟改写了农场经营的历史！'
+};
+
+function formatChallengeTime(ms) {
+    var totalSec = Math.max(0, Math.ceil(ms / 1000));
+    var min = Math.floor(totalSec / 60);
+    var sec = totalSec % 60;
+    return min + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
+function formatBigNumber(n) {
+    if (n >= 100000000) return (n / 100000000).toFixed(2) + '亿';
+    if (n >= 10000) return (n / 10000).toFixed(1) + '万';
+    return n.toString();
+}
+
+function getChallengeRank(coins) {
+    var tier = -1;
+    for (var i = CHALLENGE_TIERS.length - 1; i >= 0; i--) {
+        if (coins >= CHALLENGE_TIERS[i].threshold) { tier = i; break; }
+    }
+    return tier;
+}
+
+function getNextTierInfo(coins) {
+    for (var i = 0; i < CHALLENGE_TIERS.length; i++) {
+        if (coins < CHALLENGE_TIERS[i].threshold) {
+            return { threshold: CHALLENGE_TIERS[i].threshold, label: CHALLENGE_TIERS[i].label, remaining: CHALLENGE_TIERS[i].threshold - coins };
+        }
+    }
+    return null; // all tiers reached
+}
+
+function updateChallengeBar() {
+    if (challengeEnded) return;
+    var now = Date.now();
+    var elapsed = now - challengeStartTime;
+    var remaining = CHALLENGE_DURATION - elapsed;
+
+    // Timer display
+    var timeEl = document.getElementById('challenge-time');
+    timeEl.innerText = formatChallengeTime(remaining);
+    timeEl.className = 'timer-value';
+    if (remaining < 60000) timeEl.classList.add('urgent');
+    else if (remaining < 5 * 60000) timeEl.classList.add('warning');
+
+    // Current coins
+    document.getElementById('challenge-coins').innerText = '💰 ' + formatBigNumber(state.coins);
+
+    // Progress bar (relative to first tier initially, then scales)
+    var tier = getChallengeRank(state.coins);
+    var progressEl = document.getElementById('challenge-progress');
+    var nextTier = getNextTierInfo(state.coins);
+
+    if (nextTier) {
+        var prevThreshold = tier >= 0 ? CHALLENGE_TIERS[tier].threshold : 0;
+        var pct = Math.min(100, ((state.coins - prevThreshold) / (nextTier.threshold - prevThreshold)) * 100);
+        progressEl.style.width = pct + '%';
+
+        // Color tiers
+        progressEl.className = 'challenge-progress-fill';
+        if (tier >= 2) progressEl.classList.add('tier4');
+        else if (tier >= 1) progressEl.classList.add('tier3');
+        else if (tier >= 0) progressEl.classList.add('tier2');
+
+        document.getElementById('challenge-target-text').innerText = formatBigNumber(nextTier.threshold);
+        document.getElementById('challenge-next-tier').innerHTML = '距 <b>' + nextTier.label + '</b> 还差 <b>' + formatBigNumber(nextTier.remaining) + '</b>';
+    } else {
+        progressEl.style.width = '100%';
+        progressEl.className = 'challenge-progress-fill tier4';
+        document.getElementById('challenge-target-text').innerText = '已全部达成!';
+        document.getElementById('challenge-next-tier').innerHTML = '🎉 <b>所有目标已达成！</b>';
+    }
+
+    // Check time up
+    if (remaining <= 0) {
+        endChallenge();
+    }
+}
+
+function endChallenge() {
+    if (challengeEnded) return;
+    challengeEnded = true;
+
+    var coins = state.coins;
+    var tier = getChallengeRank(coins);
+
+    var card = document.getElementById('result-card');
+    var titleEl = document.getElementById('result-title');
+    var rankEl = document.getElementById('result-rank');
+    var coinsEl = document.getElementById('result-coins');
+    var essayEl = document.getElementById('result-essay');
+    var statsEl = document.getElementById('result-stats');
+
+    if (tier < 0) {
+        // Defeat
+        card.className = 'result-card defeat';
+        titleEl.className = 'result-title defeat-title';
+        titleEl.innerText = '⏰ 时间到！挑战失败';
+        rankEl.className = 'result-rank rank-bronze';
+        rankEl.style.background = '#555';
+        rankEl.style.color = '#aaa';
+        rankEl.innerText = '未达标';
+        essayEl.innerText = CHALLENGE_ESSAYS.defeat;
+    } else {
+        card.className = 'result-card victory';
+        titleEl.className = 'result-title victory-title';
+        titleEl.innerText = '🎉 挑战成功！';
+        var tierInfo = CHALLENGE_TIERS[tier];
+        rankEl.className = 'result-rank ' + tierInfo.rankClass;
+        rankEl.innerText = tierInfo.label;
+        rankEl.style.background = '';
+        rankEl.style.color = '';
+
+        var essayKey = tier === 3 ? 'diamond' : tier === 2 ? 'gold' : tier === 1 ? 'silver' : 'bronze';
+        essayEl.innerText = CHALLENGE_ESSAYS[essayKey];
+    }
+
+    coinsEl.innerText = '💰 最终金币: ' + formatBigNumber(coins);
+
+    // Stats
+    statsEl.innerHTML =
+        '<span>等级: <b>Lv.' + state.level + '</b></span>' +
+        '<span>天赋: <b>' + talents.length + '个</b></span>' +
+        '<span>背包物品: <b>' + state.backpack.length + '件</b></span>';
+
+    document.getElementById('result-modal').classList.add('show');
+
+    // Update timer display
+    document.getElementById('challenge-time').innerText = '00:00';
+    document.getElementById('challenge-time').className = 'timer-value urgent';
+}
+
+function restartGame() {
+    document.getElementById('result-modal').classList.remove('show');
+    challengeEnded = false;
+    challengeStartTime = Date.now();
+    state.coins = 500;
+    state.level = 1;
+    state.xp = 0;
+    state.backpack = [];
+    talents = [];
+    investments = [];
+    pendingTalentChoices = 0;
+    currentTalentChoices = [];
+    rareSeedBank = [];
+    rareAnimalBank = [];
+    autoEnabled = false;
+    document.getElementById('auto-master-chk').checked = false;
+    document.getElementById('auto-dot').className = 'auto-dot';
+    autoLog = [];
+    autoStats = { earned:0, cropsSold:0, meatSold:0, cropsHarv:0, animalsHarv:0, feeds:0 };
+    autoSellThresholds = {};
+    autoFeedConfig = {};
+    initState();
+    initMarket();
+    registerHiddenInMarket();
+    renderCropShop();
+    renderAnimalShop();
+    renderFarmGrid();
+    renderRanchGrid();
+    updateStats();
+    initAutoSelectors();
+    generateOrders();
+}
+
+
+var talents = []; // owned talents: { id, type, quality, name, desc, icon, effect }
+var investments = []; // { amount, returnMult, startTime, duration, desc }
+var pendingTalentChoices = 0; // queued talent choices
+var rareSeedBank = []; // { itemId, qty } - rare crops from talents, plantable for free
+var rareAnimalBank = []; // { itemId, qty } - rare animals from talents, placeable for free
+
+// Quality weights: normal=60%, rare=30%, legend=10%
+var QUALITY_WEIGHTS = [
+    { quality: 'normal', label: '普通', weight: 60, css: 'q-normal', cardCss: 'quality-normal' },
+    { quality: 'rare',   label: '精良', weight: 30, css: 'q-rare',   cardCss: 'quality-rare' },
+    { quality: 'legend', label: '传说', weight: 10, css: 'q-legend', cardCss: 'quality-legend' }
+];
+
+function rollQuality() {
+    var r = Math.random() * 100;
+    if (r < 10) return 'legend';
+    if (r < 40) return 'rare';
+    return 'normal';
+}
+
+// All items that can be targeted by talents
+function getAllCropIds() { return Object.keys(CROPS); }
+function getAllAnimalIds() { return Object.keys(ANIMALS); }
+function getRandomCrop() { var k = getAllCropIds(); return k[Math.floor(Math.random()*k.length)]; }
+function getRandomAnimal() { var k = getAllAnimalIds(); return k[Math.floor(Math.random()*k.length)]; }
+function getRandomItem() { return Math.random() < 0.5 ? {id:getRandomCrop(),type:'crop'} : {id:getRandomAnimal(),type:'animal'}; }
+
+// Talent generators for each type
+var TALENT_GENERATORS = {
+    // Type 1: % increase revenue
+    revenue: function(quality) {
+        var item = getRandomItem();
+        var def = item.type === 'crop' ? CROPS[item.id] : ANIMALS[item.id];
+        var pct = quality === 'legend' ? (40 + Math.floor(Math.random()*21)) :
+                  quality === 'rare' ? (20 + Math.floor(Math.random()*16)) :
+                  (8 + Math.floor(Math.random()*13));
+        return {
+            type: 'revenue', quality: quality,
+            icon: '💰', name: def.icon + def.name + '收益提升',
+            desc: def.name + '出售价格永久提升' + pct + '%',
+            value: '+' + pct + '%收益',
+            effect: { target: item.id, targetType: item.type, pct: pct }
+        };
+    },
+    // Type 2: % reduce grow time
+    speed: function(quality) {
+        var item = getRandomItem();
+        var def = item.type === 'crop' ? CROPS[item.id] : ANIMALS[item.id];
+        var pct = quality === 'legend' ? (35 + Math.floor(Math.random()*16)) :
+                  quality === 'rare' ? (18 + Math.floor(Math.random()*13)) :
+                  (6 + Math.floor(Math.random()*10));
+        return {
+            type: 'speed', quality: quality,
+            icon: '⚡', name: def.icon + def.name + '加速成长',
+            desc: def.name + '成长时间永久缩短' + pct + '%',
+            value: '-' + pct + '%时间',
+            effect: { target: item.id, targetType: item.type, pct: pct }
+        };
+    },
+    // Type 3: chance to break weight limit
+    weightBreak: function(quality) {
+        var item = getRandomItem();
+        var def = item.type === 'crop' ? CROPS[item.id] : ANIMALS[item.id];
+        var chance = quality === 'legend' ? (12 + Math.floor(Math.random()*9)) :
+                     quality === 'rare' ? (6 + Math.floor(Math.random()*7)) :
+                     (2 + Math.floor(Math.random()*4));
+        var mult = quality === 'legend' ? (7 + Math.floor(Math.random()*4)) :
+                   quality === 'rare' ? (6 + Math.floor(Math.random()*3)) :
+                   (5 + Math.floor(Math.random()*2));
+        return {
+            type: 'weightBreak', quality: quality,
+            icon: '🏋️', name: def.icon + def.name + '突破重量',
+            desc: def.name + '有' + chance + '%几率重量达到上限的' + mult + '倍',
+            value: chance + '%×' + mult + '倍',
+            effect: { target: item.id, targetType: item.type, chance: chance, mult: mult }
+        };
+    },
+    // Type 4: instant gold
+    goldBonus: function(quality) {
+        var base = state.level * 100;
+        var amount = quality === 'legend' ? (base * 8 + Math.floor(Math.random()*base*5)) :
+                     quality === 'rare' ? (base * 3 + Math.floor(Math.random()*base*3)) :
+                     (base + Math.floor(Math.random()*base*2));
+        amount = Math.round(amount);
+        return {
+            type: 'goldBonus', quality: quality,
+            icon: '💎', name: '财富降临',
+            desc: '立刻获得' + amount + '金币',
+            value: '💰+' + amount,
+            effect: { amount: amount }
+        };
+    },
+    // Type 5: investment
+    invest: function(quality) {
+        var base = state.level * 80;
+        var cost = quality === 'legend' ? (base * 6 + Math.floor(Math.random()*base*3)) :
+                   quality === 'rare' ? (base * 3 + Math.floor(Math.random()*base*2)) :
+                   (base + Math.floor(Math.random()*base));
+        cost = Math.round(cost);
+        var returnMult = quality === 'legend' ? (2.5 + Math.random()*1.5) :
+                         quality === 'rare' ? (1.8 + Math.random()*0.7) :
+                         (1.3 + Math.random()*0.4);
+        returnMult = Math.round(returnMult * 100) / 100;
+        var duration = quality === 'legend' ? 180 : quality === 'rare' ? 120 : 60;
+        return {
+            type: 'invest', quality: quality,
+            icon: '📈', name: '投资理财',
+            desc: '投入' + cost + '金币，' + duration + '秒后返还' + Math.round(cost*returnMult) + '金币',
+            value: '×' + returnMult + '回报',
+            effect: { cost: cost, returnMult: returnMult, duration: duration }
+        };
+    },
+    // Type 6: hidden items
+    hiddenItem: function(quality) {
+        var isAnimal = Math.random() < 0.4;
+        var qty, pool, def;
+        if (isAnimal) {
+            var ids = Object.keys(HIDDEN_ANIMALS);
+            var id = ids[Math.floor(Math.random()*ids.length)];
+            def = HIDDEN_ANIMALS[id];
+            qty = quality === 'legend' ? 3 : quality === 'rare' ? 2 : 1;
+            return {
+                type: 'hiddenItem', quality: quality,
+                icon: def.icon, name: '稀有生物·' + def.name,
+                desc: '获得' + qty + '只' + def.name + '（传说生物！）放入空栏位',
+                value: '×' + qty + ' ' + def.icon,
+                effect: { itemId: id, itemType: 'animal', qty: qty }
+            };
+        } else {
+            var ids = Object.keys(HIDDEN_CROPS);
+            var id = ids[Math.floor(Math.random()*ids.length)];
+            def = HIDDEN_CROPS[id];
+            qty = quality === 'legend' ? 4 : quality === 'rare' ? 2 : 1;
+            return {
+                type: 'hiddenItem', quality: quality,
+                icon: def.icon, name: '稀有作物·' + def.name,
+                desc: '获得' + qty + '个' + def.name + '种子，种入空地',
+                value: '×' + qty + ' ' + def.icon,
+                effect: { itemId: id, itemType: 'crop', qty: qty }
+            };
+        }
+    }
+};
+
+function generateTalentChoice() {
+    var types = ['revenue','speed','weightBreak','goldBonus','invest','hiddenItem'];
+    var choices = [];
+    var usedTypes = [];
+    for (var i = 0; i < 3; i++) {
+        var quality = rollQuality();
+        var type;
+        var tries = 0;
+        do {
+            type = types[Math.floor(Math.random()*types.length)];
+            tries++;
+        } while (usedTypes.indexOf(type) >= 0 && tries < 20);
+        usedTypes.push(type);
+        choices.push(TALENT_GENERATORS[type](quality));
+    }
+    return choices;
+}
+
+function getQualityInfo(quality) {
+    for (var i = 0; i < QUALITY_WEIGHTS.length; i++) {
+        if (QUALITY_WEIGHTS[i].quality === quality) return QUALITY_WEIGHTS[i];
+    }
+    return QUALITY_WEIGHTS[0];
+}
+
+var currentTalentChoices = []; // current modal choices for tracking missed
+
+function showTalentModal() {
+    if (pendingTalentChoices <= 0) return;
+    currentTalentChoices = generateTalentChoice();
+    var container = document.getElementById('talent-cards');
+    container.innerHTML = '';
+    document.getElementById('talent-modal-subtitle').innerText =
+        '选择一个天赋，永久生效 (剩余' + pendingTalentChoices + '次选择)';
+
+    for (var i = 0; i < currentTalentChoices.length; i++) {
+        var t = currentTalentChoices[i];
+        var qi = getQualityInfo(t.quality);
+        var card = document.createElement('div');
+        card.className = 'talent-card ' + qi.cardCss;
+        card.onclick = (function(talent) { return function() { selectTalent(talent); }; })(t);
+
+        var h = '<div class="talent-quality-tag ' + qi.css + '">' + qi.label + '</div>';
+        h += '<div class="talent-icon">' + t.icon + '</div>';
+        h += '<div class="talent-name">' + t.name + '</div>';
+        h += '<div class="talent-desc">' + t.desc + '</div>';
+        h += '<div class="talent-value">' + t.value + '</div>';
+        card.innerHTML = h;
+        container.appendChild(card);
+    }
+
+    document.getElementById('talent-modal').classList.add('show');
+}
+
+function selectTalent(talent) {
+    pendingTalentChoices--;
+    document.getElementById('talent-modal').classList.remove('show');
+
+    currentTalentChoices = [];
+
+    // Apply talent effect
+    applyTalent(talent);
+
+    // Show next choice if pending
+    if (pendingTalentChoices > 0) {
+        setTimeout(showTalentModal, 500);
+    }
+    renderTalentTab();
+}
+
+function applyTalent(talent) {
+    var e = talent.effect;
+    switch(talent.type) {
+        case 'revenue':
+        case 'speed':
+        case 'weightBreak':
+            talents.push({
+                type: talent.type, quality: talent.quality,
+                name: talent.name, desc: talent.desc,
+                icon: talent.icon, effect: e
+            });
+            showToast('⭐ 获得天赋: ' + talent.name);
+            break;
+        case 'goldBonus':
+            state.coins += e.amount;
+            talents.push({ type:'goldBonus', quality:talent.quality, name:talent.name, desc:talent.desc, icon:talent.icon, effect:e });
+            showToast('💎 获得 💰' + e.amount + ' 金币！');
+            updateStats();
+            break;
+        case 'invest':
+            if (state.coins < e.cost) {
+                showToast('⚠️ 金币不足以投资（需要' + e.cost + '），天赋转为金币奖励！');
+                state.coins += Math.round(e.cost * 0.3);
+                updateStats();
+            } else {
+                state.coins -= e.cost;
+                investments.push({
+                    amount: e.cost,
+                    returnMult: e.returnMult,
+                    startTime: Date.now(),
+                    duration: e.duration * 1000,
+                    desc: '投入' + e.cost + '→返还' + Math.round(e.cost*e.returnMult)
+                });
+                showToast('📈 投资' + e.cost + '金币，' + e.duration + '秒后返还' + Math.round(e.cost*e.returnMult));
+                updateStats();
+            }
+            break;
+        case 'hiddenItem':
+            if (e.itemType === 'crop') {
+                var hCrop = HIDDEN_CROPS[e.itemId];
+                // Add to rare seed bank instead of auto-planting
+                var found = false;
+                for (var i = 0; i < rareSeedBank.length; i++) {
+                    if (rareSeedBank[i].itemId === e.itemId) {
+                        rareSeedBank[i].qty += e.qty;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) rareSeedBank.push({ itemId: e.itemId, qty: e.qty });
+                showToast('🌟 获得' + e.qty + '个' + hCrop.name + '种子！可在种子列表中免费种植！');
+                renderCropShop();
+            } else {
+                var hAnimal = HIDDEN_ANIMALS[e.itemId];
+                // Add to rare animal bank instead of auto-placing
+                var found = false;
+                for (var i = 0; i < rareAnimalBank.length; i++) {
+                    if (rareAnimalBank[i].itemId === e.itemId) {
+                        rareAnimalBank[i].qty += e.qty;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found) rareAnimalBank.push({ itemId: e.itemId, qty: e.qty });
+                showToast('🌟 获得' + e.qty + '只' + hAnimal.name + '！可在动物列表中免费放置！');
+                renderAnimalShop();
+            }
+            talents.push({ type:'hiddenItem', quality:talent.quality, name:talent.name, desc:talent.desc, icon:talent.icon, effect:e });
+            break;
+    }
+    renderTalentTab();
+}
+
+// Get revenue bonus for an item
+function getTalentRevenueBonus(itemId) {
+    var totalPct = 0;
+    for (var i = 0; i < talents.length; i++) {
+        if (talents[i].type === 'revenue' && talents[i].effect.target === itemId) {
+            totalPct += talents[i].effect.pct;
+        }
+    }
+    return totalPct;
+}
+
+// Get speed bonus for an item (returns reduction %)
+function getTalentSpeedBonus(itemId) {
+    var totalPct = 0;
+    for (var i = 0; i < talents.length; i++) {
+        if (talents[i].type === 'speed' && talents[i].effect.target === itemId) {
+            totalPct += talents[i].effect.pct;
+        }
+    }
+    return Math.min(80, totalPct); // cap at 80% reduction
+}
+
+// Check weight break for an item, returns multiplied weight or original
+function tryWeightBreak(itemId, weight, maxWeight) {
+    for (var i = 0; i < talents.length; i++) {
+        if (talents[i].type === 'weightBreak' && talents[i].effect.target === itemId) {
+            var e = talents[i].effect;
+            if (Math.random() * 100 < e.chance) {
+                var broken = maxWeight * (5 + Math.random() * (e.mult - 5));
+                showToast('🏋️ 重量突破！' + weight.toFixed(1) + 'kg → ' + broken.toFixed(1) + 'kg！');
+                return Math.round(broken * 100) / 100;
+            }
+        }
+    }
+    return weight;
+}
+
+function tickInvestments() {
+    var now = Date.now();
+    for (var i = investments.length - 1; i >= 0; i--) {
+        var inv = investments[i];
+        if (now >= inv.startTime + inv.duration) {
+            var ret = Math.round(inv.amount * inv.returnMult);
+            state.coins += ret;
+            showToast('📈 投资到期！返还 💰' + ret + ' (本金' + inv.amount + ')');
+            investments.splice(i, 1);
+            updateStats();
+        }
+    }
+}
+
+
+
+function renderTalentTab() {
+    var list = document.getElementById('talent-owned-list');
+    if (!list) return;
+    list.innerHTML = '';
+    document.getElementById('talent-count').innerText = '(' + talents.length + '个)';
+
+    if (talents.length === 0) {
+        list.innerHTML = '<div class="talent-empty">暂无天赋，升级后可获得天赋选择机会</div>';
+    } else {
+        for (var i = 0; i < talents.length; i++) {
+            var t = talents[i];
+            var qi = getQualityInfo(t.quality);
+            var el = document.createElement('div');
+            el.className = 'talent-owned-item';
+            el.innerHTML = '<span class="talent-owned-icon">' + t.icon + '</span>' +
+                '<span class="talent-owned-name">' + t.name + '</span>' +
+                '<span class="talent-owned-desc">' + t.desc + '</span>' +
+                '<span class="talent-owned-quality ' + qi.css + '">' + qi.label + '</span>';
+            list.appendChild(el);
+        }
+    }
+
+    // Pending talent choices (补学)
+    var missedPanel = document.getElementById('missed-talent-panel');
+    if (missedPanel) {
+        if (pendingTalentChoices <= 0) {
+            missedPanel.style.display = 'none';
+        } else {
+            missedPanel.style.display = 'block';
+            document.getElementById('missed-talent-count').innerText = '(剩余' + pendingTalentChoices + '次)';
+        }
+    }
+
+    // Investment list
+    var invList = document.getElementById('invest-list');
+    if (!invList) return;
+    invList.innerHTML = '';
+    if (investments.length === 0) {
+        invList.innerHTML = '<div class="talent-empty">暂无进行中的投资</div>';
+    } else {
+        var now = Date.now();
+        for (var i = 0; i < investments.length; i++) {
+            var inv = investments[i];
+            var remaining = Math.max(0, Math.ceil((inv.startTime + inv.duration - now) / 1000));
+            var el = document.createElement('div');
+            el.className = 'invest-item';
+            el.innerHTML = '<span>📈</span>' +
+                '<span style="flex:1;">' + inv.desc + '</span>' +
+                '<span class="invest-timer">⏱️ ' + remaining + 's</span>' +
+                '<span class="invest-profit">💰' + Math.round(inv.amount*inv.returnMult) + '</span>';
+            invList.appendChild(el);
+        }
+    }
+}
+
+
+var state = {
+    coins: 500,
+    level: 1,
+    xp: 0,
+    plots: [],
+    pens: [],
+    selectedSeed: null,
+    selectedAnimal: null,
+    backpack: [],   // { type:'crop'|'meat', itemId, weight, harvestedAt }
+    lastTick: Date.now()
+};
+
+function initState() {
+    state.plots = [];
+    for (var i = 0; i < 16; i++) {
+        state.plots.push({ id:i, unlocked: i < 6, cropId:null, plantedAt:0 });
+    }
+    state.pens = [];
+    for (var i = 0; i < 12; i++) {
+        state.pens.push({
+            id:i, unlocked: i < 3, animalId:null, placedAt:0,
+            currentWeight:0, fedCount:0, bonusTime:0
+        });
+    }
+}
+
+// ==================== MARKET SYSTEM ====================
+var PRICE_HISTORY_MAX = 60;
+var market = {};
+var marketType = 'crop';
+var selectedMarketItem = 'wheat';
+
+function initMarket() {
+    var allItems = {};
+    var keys = Object.keys(CROPS);
+    for (var i = 0; i < keys.length; i++) {
+        allItems[keys[i]] = { baseSell: CROPS[keys[i]].baseSell, type: 'crop' };
+    }
+    keys = Object.keys(ANIMALS);
+    for (var i = 0; i < keys.length; i++) {
+        allItems[keys[i]] = { baseSell: ANIMALS[keys[i]].baseSell, type: 'animal' };
+    }
+
+    var allKeys = Object.keys(allItems);
+    for (var i = 0; i < allKeys.length; i++) {
+        var id = allKeys[i];
+        var base = allItems[id].baseSell;
+        var hist = [];
+        for (var j = 0; j < PRICE_HISTORY_MAX; j++) {
+            hist.push(base + (Math.random() - 0.5) * base * 0.3);
+        }
+        market[id] = {
+            current: hist[hist.length - 1],
+            history: hist,
+            trend: 0,
+            type: allItems[id].type
+        };
+    }
+}
+
+function tickMarket() {
+    var allKeys = Object.keys(market);
+    for (var i = 0; i < allKeys.length; i++) {
+        var id = allKeys[i];
+        var m = market[id];
+        var base;
+        if (CROPS[id]) base = CROPS[id].baseSell;
+        else if (ANIMALS[id]) base = ANIMALS[id].baseSell;
+        else if (HIDDEN_CROPS[id]) base = HIDDEN_CROPS[id].baseSell;
+        else if (HIDDEN_ANIMALS[id]) base = HIDDEN_ANIMALS[id].baseSell;
+        else continue;
+
+        m.trend += (Math.random() - 0.5) * 0.4;
+        m.trend *= 0.9;
+        var change = m.trend + (Math.random() - 0.5) * base * 0.08;
+        change += (base - m.current) * 0.02;
+        m.current = Math.max(base * 0.3, Math.round(m.current + change));
+        m.history.push(m.current);
+        if (m.history.length > PRICE_HISTORY_MAX) m.history.shift();
+    }
+}
+
+function getCurrentPrice(itemId) {
+    if (market[itemId]) return market[itemId].current;
+    if (CROPS[itemId]) return CROPS[itemId].baseSell;
+    if (ANIMALS[itemId]) return ANIMALS[itemId].baseSell;
+    if (HIDDEN_CROPS[itemId]) return HIDDEN_CROPS[itemId].baseSell;
+    if (HIDDEN_ANIMALS[itemId]) return HIDDEN_ANIMALS[itemId].baseSell;
+    return 0;
+}
+
+function getCropSellPrice(cropId, weight) {
+    var crop = CROPS[cropId] || HIDDEN_CROPS[cropId];
+    var baseWeight = (crop.weightRange[0] + crop.weightRange[1]) / 2;
+    var wm = weight / baseWeight;
+    var price = Math.round(getCurrentPrice(cropId) * wm);
+    // Talent revenue bonus
+    var bonus = getTalentRevenueBonus(cropId);
+    if (bonus > 0) price = Math.round(price * (1 + bonus / 100));
+    return price;
+}
+
+function getMeatSellPrice(animalId, weight) {
+    var animal = ANIMALS[animalId] || HIDDEN_ANIMALS[animalId];
+    var baseWeight = (animal.weightRange[0] + animal.weightRange[1]) / 2;
+    var wm = weight / baseWeight;
+    var price = Math.round(getCurrentPrice(animalId) * wm);
+    // Talent revenue bonus
+    var bonus = getTalentRevenueBonus(animalId);
+    if (bonus > 0) price = Math.round(price * (1 + bonus / 100));
+    return price;
+}
+
+// ==================== LEVEL SYSTEM ====================
+function getRequiredXp(level) {
+    // 经验曲线大幅加陡，20分钟左右才解锁最终作物(Lv.7)
+    // Lv1→2: 200, Lv2→3: 600, Lv3→4: 1400, Lv4→5: 3000, Lv5→6: 5400, Lv6→7: 8600
+    return Math.round(level * level * 150 + level * 50);
+}
+
+function addXp(amount) {
+    state.xp += amount;
+    var reqXp = getRequiredXp(state.level);
+    var leveledUp = false;
+    var levelsGained = 0;
+    while (state.xp >= reqXp) { state.level++; leveledUp = true; levelsGained++; reqXp = getRequiredXp(state.level); }
+    if (leveledUp) {
+        showToast('\u{1F389} \u5347\u7EA7\u5230 Lv.' + state.level + '\uFF01\u53EF\u9009\u62E9' + levelsGained + '\u4E2A\u5929\u8D4B\uFF01');
+        renderCropShop();
+        renderAnimalShop();
+        pendingTalentChoices += levelsGained;
+        setTimeout(showTalentModal, 800);
+    }
+}
+
+// ==================== TABS ====================
+document.querySelectorAll('.tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
+        document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.remove('active'); });
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+        if (btn.dataset.tab === 'backpack') renderBackpack();
+        if (btn.dataset.tab === 'market') renderMarket();
+        if (btn.dataset.tab === 'ranch') { renderAnimalShop(); updateRanchGrid(); }
+        if (btn.dataset.tab === 'auto') { initAutoSelectors(); renderAutoLog(); }
+        if (btn.dataset.tab === 'orders') renderOrders();
+        if (btn.dataset.tab === 'talents') renderTalentTab();
+    });
+});
+
+// ==================== RENDER: CROP SHOP ====================
+function renderCropShop() {
+    var container = document.getElementById('seed-list');
+    container.innerHTML = '';
+    // Rare seeds from talent bank - show at top
+    for (var ri = 0; ri < rareSeedBank.length; ri++) {
+        var rs = rareSeedBank[ri];
+        var crop = HIDDEN_CROPS[rs.itemId];
+        if (!crop || rs.qty <= 0) continue;
+        var selected = state.selectedSeed === rs.itemId;
+        var price = getCurrentPrice(rs.itemId);
+        var el = document.createElement('div');
+        el.className = 'seed-item rare-seed' + (selected ? ' selected' : '');
+        el.setAttribute('data-id', rs.itemId);
+        el.onclick = (function(id) { return function() { selectRareSeed(id); }; })(rs.itemId);
+        var html = '<div style="font-size:1.6rem;margin-bottom:3px;">' + crop.icon + '</div>';
+        html += '<div class="seed-name">' + crop.name + '</div>';
+        html += '<div class="rare-seed-tag">\u2B50 \u7A00\u6709\u00D7' + rs.qty + '</div>';
+        html += '<div class="seed-meta" style="color:#4CAF50;">\u514D\u8D39\u79CD\u690D</div>';
+        html += '<div class="seed-price-live price-up">\u552E:' + price + '</div>';
+        html += '<div class="seed-meta">\u23F1\uFE0F ' + crop.time + 's</div>';
+        el.innerHTML = html;
+        container.appendChild(el);
+    }
+    // Normal seeds
+    var cropKeys = Object.keys(CROPS);
+    for (var ci = 0; ci < cropKeys.length; ci++) {
+        var crop = CROPS[cropKeys[ci]];
+        var locked = state.level < crop.minLevel;
+        var selected = state.selectedSeed === crop.id;
+        var price = getCurrentPrice(crop.id);
+        var base = crop.baseSell;
+        var pctChange = ((price - base) / base * 100).toFixed(0);
+        var isUp = price >= base;
+
+        var el = document.createElement('div');
+        el.className = 'seed-item' + (locked ? ' locked' : '') + (selected ? ' selected' : '');
+        el.setAttribute('data-id', crop.id);
+        el.onclick = (function(id) { return function() { selectSeed(id); }; })(crop.id);
+        var html = '<div style="font-size:1.6rem;margin-bottom:3px;">' + crop.icon + '</div>';
+        html += '<div class="seed-name">' + crop.name + '</div>';
+        if (locked) html += '<div style="color:#ff9800;font-size:0.7rem;">Lv.' + crop.minLevel + '</div>';
+        html += '<div class="seed-meta">\u{1F4B0}' + crop.cost + '</div>';
+        html += '<div class="seed-price-live ' + (isUp ? 'price-up' : 'price-down') + '">\u552E:' + price + '(' + (isUp ? '+' : '') + pctChange + '%)</div>';
+        html += '<div class="seed-meta">\u23F1\uFE0F ' + crop.time + 's</div>';
+        if (crop.isFeed) html += '<div class="seed-feed-tag">\u{1F37D}\uFE0F ' + crop.feedDesc + '</div>';
+        el.innerHTML = html;
+        container.appendChild(el);
+    }
+}
+
+// ==================== RENDER: ANIMAL SHOP ====================
+function renderAnimalShop() {
+    var container = document.getElementById('animal-list');
+    container.innerHTML = '';
+    // Rare animals from talent bank - show at top
+    for (var ri = 0; ri < rareAnimalBank.length; ri++) {
+        var ra = rareAnimalBank[ri];
+        var animal = HIDDEN_ANIMALS[ra.itemId];
+        if (!animal || ra.qty <= 0) continue;
+        var selected = state.selectedAnimal === ra.itemId;
+        var price = getCurrentPrice(ra.itemId);
+        var el = document.createElement('div');
+        el.className = 'animal-item rare-animal' + (selected ? ' selected' : '');
+        el.onclick = (function(id) { return function() { selectRareAnimal(id); }; })(ra.itemId);
+        var html = '<div style="font-size:1.6rem;margin-bottom:3px;">' + animal.icon + '</div>';
+        html += '<div class="seed-name">' + animal.name + '</div>';
+        html += '<div class="rare-seed-tag">\u2B50 \u7A00\u6709\u00D7' + ra.qty + '</div>';
+        html += '<div class="seed-meta" style="color:#4CAF50;">\u514D\u8D39\u653E\u7F6E</div>';
+        html += '<div class="seed-price-live price-up">\u552E:' + price + '</div>';
+        html += '<div class="seed-meta">\u23F1\uFE0F ' + animal.time + 's | ' + animal.feedDesc + '</div>';
+        el.innerHTML = html;
+        container.appendChild(el);
+    }
+    // Normal animals
+    var animalKeys = Object.keys(ANIMALS);
+    for (var ai = 0; ai < animalKeys.length; ai++) {
+        var animal = ANIMALS[animalKeys[ai]];
+        var locked = state.level < animal.minLevel;
+        var selected = state.selectedAnimal === animal.id;
+        var price = getCurrentPrice(animal.id);
+        var base = animal.baseSell;
+        var pctChange = ((price - base) / base * 100).toFixed(0);
+        var isUp = price >= base;
+
+        var el = document.createElement('div');
+        el.className = 'animal-item' + (locked ? ' locked' : '') + (selected ? ' selected' : '');
+        el.onclick = (function(id) { return function() { selectAnimal(id); }; })(animal.id);
+        var html = '<div style="font-size:1.6rem;margin-bottom:3px;">' + animal.icon + '</div>';
+        html += '<div class="seed-name">' + animal.name + '</div>';
+        if (locked) html += '<div style="color:#ff9800;font-size:0.7rem;">Lv.' + animal.minLevel + '</div>';
+        html += '<div class="seed-meta">\u{1F4B0}' + animal.cost + '</div>';
+        html += '<div class="seed-price-live ' + (isUp ? 'price-up' : 'price-down') + '">\u552E:' + price + '(' + (isUp ? '+' : '') + pctChange + '%)</div>';
+        html += '<div class="seed-meta">\u23F1\uFE0F ' + animal.time + 's | \u{1F37D}\uFE0F ' + animal.feedDesc + '</div>';
+        el.innerHTML = html;
+        container.appendChild(el);
+    }
+}
+
+// ==================== RENDER: FARM GRID ====================
+function renderFarmGrid() {
+    var container = document.getElementById('farm-grid');
+    container.innerHTML = '';
+    for (var i = 0; i < state.plots.length; i++) {
+        var plot = state.plots[i];
+        var el = document.createElement('div');
+        el.className = 'plot' + (!plot.unlocked ? ' locked' : '');
+        el.id = 'plot-' + i;
+        if (plot.unlocked) {
+            el.onclick = (function(idx) { return function() { handlePlotClick(idx); }; })(i);
+        }
+        container.appendChild(el);
+    }
+    updateFarmGrid();
+}
+
+function updateFarmGrid() {
+    var now = Date.now();
+    for (var i = 0; i < state.plots.length; i++) {
+        var plot = state.plots[i];
+        if (!plot.unlocked) continue;
+        var el = document.getElementById('plot-' + i);
+        if (!el) continue;
+        if (plot.cropId) {
+            var crop = CROPS[plot.cropId] || HIDDEN_CROPS[plot.cropId];
+            var speedBonus = getTalentSpeedBonus(plot.cropId);
+            var effectiveTime = crop.time * (1 - speedBonus / 100);
+            var elapsed = (now - plot.plantedAt) / 1000;
+            var progress = Math.min(100, (elapsed / effectiveTime) * 100);
+            var isReady = progress >= 100;
+            var html = '<div style="font-size:1.8rem;line-height:1;">' + crop.icon + '</div>';
+            if (crop.hidden) html += '<div style="font-size:0.55rem;color:#FFD700;position:absolute;top:2px;left:4px;">✨稀有</div>';
+            if (isReady) {
+                html += '<div class="ready-mark">\u2713</div>';
+                el.style.boxShadow = '0 0 12px #FFD700';
+            } else {
+                html += '<div class="progress-bar"><div class="progress" style="width:' + progress + '%"></div></div>';
+                el.style.boxShadow = 'inset 0 0 10px rgba(0,0,0,0.5)';
+            }
+            el.innerHTML = html;
+        } else {
+            el.innerHTML = '';
+            el.style.boxShadow = 'inset 0 0 10px rgba(0,0,0,0.5)';
+        }
+    }
+}
+
+// ==================== RENDER: RANCH GRID ====================
+function renderRanchGrid() {
+    var container = document.getElementById('ranch-grid');
+    container.innerHTML = '';
+    for (var i = 0; i < state.pens.length; i++) {
+        var pen = state.pens[i];
+        var el = document.createElement('div');
+        el.className = 'pen' + (!pen.unlocked ? ' locked' : '');
+        el.id = 'pen-' + i;
+        if (pen.unlocked) {
+            el.onclick = (function(idx) { return function() { handlePenClick(idx); }; })(i);
+        }
+        container.appendChild(el);
+    }
+    updateRanchGrid();
+}
+
+function updateRanchGrid() {
+    var now = Date.now();
+    for (var i = 0; i < state.pens.length; i++) {
+        var pen = state.pens[i];
+        if (!pen.unlocked) continue;
+        var el = document.getElementById('pen-' + i);
+        if (!el) continue;
+        if (pen.animalId) {
+            var animal = ANIMALS[pen.animalId] || HIDDEN_ANIMALS[pen.animalId];
+            var speedBonus = getTalentSpeedBonus(pen.animalId);
+            var effectiveTime = Math.max(10, (animal.time * (1 - speedBonus / 100)) - pen.bonusTime);
+            var elapsed = (now - pen.placedAt) / 1000;
+            var progress = Math.min(100, (elapsed / effectiveTime) * 100);
+            var isReady = progress >= 100;
+
+            var wr = animal.weightRange;
+            var norm = Math.min(1, Math.max(0, (pen.currentWeight - wr[0]) / (wr[1] - wr[0])));
+            var iconSize = 1.4 + norm * 1.6;
+
+            var html = '<div style="font-size:' + iconSize.toFixed(1) + 'rem;line-height:1;">' + animal.icon + '</div>';
+            if (animal.hidden) html += '<div style="font-size:0.55rem;color:#FFD700;position:absolute;top:2px;left:4px;">✨传说</div>';
+            html += '<div class="pen-weight">\u2696\uFE0F ' + pen.currentWeight.toFixed(1) + 'kg</div>';
+
+            if (isReady) {
+                html += '<div class="ready-mark">\u2713</div>';
+                el.style.boxShadow = '0 0 12px #FFD700';
+            } else {
+                html += '<div class="progress-bar"><div class="progress" style="width:' + progress + '%"></div></div>';
+                el.style.boxShadow = 'inset 0 0 10px rgba(0,0,0,0.5)';
+                if (pen.fedCount < animal.maxFeeds) {
+                    html += '<button class="pen-feed-btn" onclick="event.stopPropagation();openFeedModal(' + i + ')">\u{1F37D}\uFE0F\u5582</button>';
+                }
+            }
+            el.innerHTML = html;
+        } else {
+            el.innerHTML = '';
+            el.style.boxShadow = 'inset 0 0 10px rgba(0,0,0,0.5)';
+        }
+    }
+}
+
+// ==================== STATS ====================
+function updateStats() {
+    document.getElementById('coins-display').innerText = '\u{1F4B0} ' + state.coins;
+    document.getElementById('level-display').innerText = state.level;
+    var reqXp = getRequiredXp(state.level);
+    var prevXp = state.level > 1 ? getRequiredXp(state.level - 1) : 0;
+    var total = reqXp - prevXp;
+    var cur = state.xp - prevXp;
+    var pct = Math.min(100, Math.max(0, (cur / total) * 100));
+    document.getElementById('xp-bar').style.width = pct + '%';
+    document.getElementById('xp-text').innerText = cur + '/' + total;
+
+    // Farm unlock - exponential cost growth
+    var unlockedPlots = 0;
+    for (var i = 0; i < state.plots.length; i++) { if (state.plots[i].unlocked) unlockedPlots++; }
+    var plotCost = Math.round(100 * Math.pow(1.6, unlockedPlots - 6));
+    if (unlockedPlots <= 6) plotCost = [0, 0, 0, 0, 0, 0, 100][unlockedPlots] || 100;
+    else plotCost = Math.round(100 * Math.pow(1.6, unlockedPlots - 6));
+    document.getElementById('unlock-cost').innerText = plotCost;
+    var btnPlot = document.getElementById('btn-unlock-plot');
+    if (unlockedPlots >= 16) { btnPlot.innerText = '\u5DF2\u6EE1'; btnPlot.disabled = true; }
+    else { btnPlot.disabled = state.coins < plotCost; }
+
+    // Ranch unlock - exponential cost growth
+    var unlockedPens = 0;
+    for (var i = 0; i < state.pens.length; i++) { if (state.pens[i].unlocked) unlockedPens++; }
+    var penCost = Math.round(200 * Math.pow(1.8, unlockedPens - 3));
+    if (unlockedPens <= 3) penCost = [0, 0, 0, 200][unlockedPens] || 200;
+    else penCost = Math.round(200 * Math.pow(1.8, unlockedPens - 3));
+    document.getElementById('pen-unlock-cost').innerText = penCost;
+    var btnPen = document.getElementById('btn-unlock-pen');
+    if (unlockedPens >= 12) { btnPen.innerText = '\u5DF2\u6EE1'; btnPen.disabled = true; }
+    else { btnPen.disabled = state.coins < penCost; }
+
+    // BP count
+    document.getElementById('bp-count-header').innerText = '\u{1F392} ' + state.backpack.length;
+}
+
+// ==================== FARM ACTIONS ====================
+function selectSeed(cropId) {
+    if (state.level < CROPS[cropId].minLevel) { showToast('\u7B49\u7EA7\u4E0D\u8DB3\uFF01\u9700\u8981 Lv.' + CROPS[cropId].minLevel); return; }
+    state.selectedSeed = state.selectedSeed === cropId ? null : cropId;
+    renderCropShop();
+}
+function selectRareSeed(cropId) {
+    state.selectedSeed = state.selectedSeed === cropId ? null : cropId;
+    renderCropShop();
+}
+function clearCropSelection() { state.selectedSeed = null; renderCropShop(); }
+
+function handlePlotClick(index) {
+    var plot = state.plots[index];
+    if (!plot.unlocked) return;
+    if (plot.cropId) {
+        var crop = CROPS[plot.cropId] || HIDDEN_CROPS[plot.cropId];
+        var speedBonus = getTalentSpeedBonus(plot.cropId);
+        var effectiveTime = crop.time * (1 - speedBonus / 100);
+        var elapsed = (Date.now() - plot.plantedAt) / 1000;
+        if (elapsed >= effectiveTime) harvestCrop(index);
+        else showToast('\u8FD8\u5728\u751F\u957F\u4E2D...');
+    } else {
+        if (!state.selectedSeed) { showToast('\u8BF7\u5148\u9009\u62E9\u79CD\u5B50'); return; }
+        // Check if it's a rare seed
+        if (HIDDEN_CROPS[state.selectedSeed]) {
+            plantRareCrop(index, state.selectedSeed);
+        } else {
+            plantCrop(index, state.selectedSeed);
+        }
+    }
+}
+
+function plantRareCrop(index, cropId, silent) {
+    var crop = HIDDEN_CROPS[cropId];
+    if (!crop) return false;
+    // Find in bank and decrement
+    var bankEntry = null;
+    for (var i = 0; i < rareSeedBank.length; i++) {
+        if (rareSeedBank[i].itemId === cropId && rareSeedBank[i].qty > 0) {
+            bankEntry = rareSeedBank[i];
+            break;
+        }
+    }
+    if (!bankEntry) { if (!silent) showToast('\u6CA1\u6709\u8BE5\u7A00\u6709\u79CD\u5B50\u4E86\uFF01'); return false; }
+    bankEntry.qty--;
+    // Remove from bank if depleted
+    if (bankEntry.qty <= 0) {
+        for (var i = 0; i < rareSeedBank.length; i++) {
+            if (rareSeedBank[i].itemId === cropId) { rareSeedBank.splice(i, 1); break; }
+        }
+        // Clear selection if no more seeds
+        if (state.selectedSeed === cropId) state.selectedSeed = null;
+    }
+    state.plots[index].cropId = cropId;
+    state.plots[index].plantedAt = Date.now();
+    if (!silent) showToast('\u{1F31F} \u79CD\u4E0B' + crop.name + '\uFF01\u5269\u4F59' + (bankEntry.qty || 0) + '\u4E2A');
+    updateStats(); updateFarmGrid(); renderCropShop();
+    return true;
+}
+
+function plantCrop(index, cropId, silent) {
+    var crop = CROPS[cropId];
+    if (state.coins < crop.cost) { if (!silent) showToast('\u91D1\u5E01\u4E0D\u8DB3\uFF01'); return false; }
+    state.coins -= crop.cost;
+    state.plots[index].cropId = cropId;
+    state.plots[index].plantedAt = Date.now();
+    updateStats(); updateFarmGrid(); renderCropShop();
+    return true;
+}
+
+function harvestCrop(index, silent) {
+    var plot = state.plots[index];
+    var crop = CROPS[plot.cropId] || HIDDEN_CROPS[plot.cropId];
+    var wr = crop.weightRange;
+    var weight = Math.round((wr[0] + Math.random() * (wr[1] - wr[0])) * 100) / 100;
+    // Talent: weight break
+    weight = tryWeightBreak(plot.cropId, weight, wr[1]);
+    state.backpack.push({ type:'crop', itemId: plot.cropId, weight: weight, harvestedAt: Date.now() });
+    addXp(crop.xp);
+    if (!silent) showToast('\u6536\u83B7 ' + crop.name + '\uFF08' + weight + 'kg\uFF09\uFF0C\u5DF2\u653E\u5165\u80CC\u5305\uFF01');
+    var cropName = crop.name;
+    plot.cropId = null;
+    plot.plantedAt = 0;
+    updateStats(); updateFarmGrid(); renderCropShop();
+    return { name: cropName, weight: weight };
+}
+
+function unlockPlot() {
+    var unlockedPlots = 0;
+    for (var i = 0; i < state.plots.length; i++) { if (state.plots[i].unlocked) unlockedPlots++; }
+    if (unlockedPlots >= 16) return;
+    var cost = unlockedPlots * 50;
+    if (state.coins < cost) { showToast('\u91D1\u5E01\u4E0D\u8DB3\uFF01'); return; }
+    state.coins -= cost;
+    for (var i = 0; i < state.plots.length; i++) {
+        if (!state.plots[i].unlocked) { state.plots[i].unlocked = true; showToast('\u6269\u5EFA\u6210\u529F\uFF01'); renderFarmGrid(); updateStats(); break; }
+    }
+}
+
+// ==================== RANCH ACTIONS ====================
+function selectAnimal(animalId) {
+    if (state.level < ANIMALS[animalId].minLevel) { showToast('\u7B49\u7EA7\u4E0D\u8DB3\uFF01\u9700\u8981 Lv.' + ANIMALS[animalId].minLevel); return; }
+    state.selectedAnimal = state.selectedAnimal === animalId ? null : animalId;
+    renderAnimalShop();
+}
+function selectRareAnimal(animalId) {
+    state.selectedAnimal = state.selectedAnimal === animalId ? null : animalId;
+    renderAnimalShop();
+}
+function clearAnimalSelection() { state.selectedAnimal = null; renderAnimalShop(); }
+
+function handlePenClick(index) {
+    var pen = state.pens[index];
+    if (!pen.unlocked) return;
+    if (pen.animalId) {
+        var animal = ANIMALS[pen.animalId] || HIDDEN_ANIMALS[pen.animalId];
+        var speedBonus = getTalentSpeedBonus(pen.animalId);
+        var effectiveTime = Math.max(10, (animal.time * (1 - speedBonus / 100)) - pen.bonusTime);
+        var elapsed = (Date.now() - pen.placedAt) / 1000;
+        if (elapsed >= effectiveTime) harvestAnimal(index);
+        else showToast('\u8FD8\u5728\u6210\u957F\u4E2D... (\u5269\u4F59' + Math.ceil(effectiveTime - elapsed) + 's)');
+    } else {
+        if (!state.selectedAnimal) { showToast('\u8BF7\u5148\u9009\u62E9\u52A8\u7269'); return; }
+        // Check if it's a rare animal
+        if (HIDDEN_ANIMALS[state.selectedAnimal]) {
+            placeRareAnimal(index, state.selectedAnimal);
+        } else {
+            placeAnimal(index, state.selectedAnimal);
+        }
+    }
+}
+
+function placeRareAnimal(index, animalId, silent) {
+    var animal = HIDDEN_ANIMALS[animalId];
+    if (!animal) return false;
+    // Find in bank and decrement
+    var bankEntry = null;
+    for (var i = 0; i < rareAnimalBank.length; i++) {
+        if (rareAnimalBank[i].itemId === animalId && rareAnimalBank[i].qty > 0) {
+            bankEntry = rareAnimalBank[i];
+            break;
+        }
+    }
+    if (!bankEntry) { if (!silent) showToast('\u6CA1\u6709\u8BE5\u7A00\u6709\u52A8\u7269\u4E86\uFF01'); return false; }
+    bankEntry.qty--;
+    // Remove from bank if depleted
+    if (bankEntry.qty <= 0) {
+        for (var i = 0; i < rareAnimalBank.length; i++) {
+            if (rareAnimalBank[i].itemId === animalId) { rareAnimalBank.splice(i, 1); break; }
+        }
+        if (state.selectedAnimal === animalId) state.selectedAnimal = null;
+    }
+    var pen = state.pens[index];
+    pen.animalId = animalId;
+    pen.placedAt = Date.now();
+    pen.currentWeight = animal.baseWeight;
+    pen.fedCount = 0;
+    pen.bonusTime = 0;
+    if (!silent) showToast('\u{1F31F} \u653E\u7F6E' + animal.name + '\uFF01\u5269\u4F59' + (bankEntry.qty || 0) + '\u53EA');
+    updateStats(); updateRanchGrid(); renderAnimalShop();
+    return true;
+}
+
+function placeAnimal(index, animalId, silent) {
+    var animal = ANIMALS[animalId];
+    if (state.coins < animal.cost) { if (!silent) showToast('\u91D1\u5E01\u4E0D\u8DB3\uFF01'); return false; }
+    state.coins -= animal.cost;
+    var pen = state.pens[index];
+    pen.animalId = animalId;
+    pen.placedAt = Date.now();
+    pen.currentWeight = animal.baseWeight;
+    pen.fedCount = 0;
+    pen.bonusTime = 0;
+    updateStats(); updateRanchGrid(); renderAnimalShop();
+    return true;
+}
+
+function harvestAnimal(index, silent) {
+    var pen = state.pens[index];
+    var animal = ANIMALS[pen.animalId] || HIDDEN_ANIMALS[pen.animalId];
+    var finalWeight = Math.round((pen.currentWeight + (Math.random() - 0.3) * 2) * 100) / 100;
+    finalWeight = Math.max(animal.weightRange[0], Math.min(animal.weightRange[1], finalWeight));
+    // Talent: weight break
+    finalWeight = tryWeightBreak(pen.animalId, finalWeight, animal.weightRange[1]);
+    state.backpack.push({ type:'meat', itemId: pen.animalId, weight: finalWeight, harvestedAt: Date.now() });
+    addXp(animal.xp);
+    if (!silent) showToast('\u51FA\u680F ' + animal.name + '\uFF08' + finalWeight + 'kg\uFF09\uFF0C\u5DF2\u653E\u5165\u80CC\u5305\uFF01');
+    var animalName = animal.name;
+    pen.animalId = null;
+    pen.placedAt = 0;
+    pen.currentWeight = 0;
+    pen.fedCount = 0;
+    pen.bonusTime = 0;
+    updateStats(); updateRanchGrid(); renderAnimalShop();
+    return { name: animalName, weight: finalWeight };
+}
+
+function unlockPen() {
+    var unlockedPens = 0;
+    for (var i = 0; i < state.pens.length; i++) { if (state.pens[i].unlocked) unlockedPens++; }
+    if (unlockedPens >= 12) return;
+    var cost = unlockedPens <= 3 ? 200 : Math.round(200 * Math.pow(1.8, unlockedPens - 3));
+    if (state.coins < cost) { showToast('\u91D1\u5E01\u4E0D\u8DB3\uFF01'); return; }
+    state.coins -= cost;
+    for (var i = 0; i < state.pens.length; i++) {
+        if (!state.pens[i].unlocked) { state.pens[i].unlocked = true; showToast('\u6269\u5EFA\u680F\u820D\u6210\u529F\uFF01'); renderRanchGrid(); updateStats(); break; }
+    }
+}
+
+// ==================== FEEDING SYSTEM ====================
+var feedModalPenIndex = -1;
+
+function openFeedModal(penIndex) {
+    feedModalPenIndex = penIndex;
+    var pen = state.pens[penIndex];
+    var animal = ANIMALS[pen.animalId] || HIDDEN_ANIMALS[pen.animalId];
+
+    document.getElementById('feed-modal-title').innerHTML = '\u{1F37D}\uFE0F \u6295\u5582 ' + animal.icon + ' ' + animal.name +
+        ' <span style="font-size:0.8rem;color:#aaa;">(\u5DF2\u5582' + pen.fedCount + '/' + animal.maxFeeds + '\u6B21)</span>';
+
+    var body = document.getElementById('feed-modal-body');
+    body.innerHTML = '';
+
+    // Count available feed crops in backpack
+    var feedCounts = {};
+    for (var i = 0; i < state.backpack.length; i++) {
+        var item = state.backpack[i];
+        if (item.type === 'crop' && CROPS[item.itemId] && CROPS[item.itemId].isFeed) {
+            if (animal.acceptFeeds.indexOf(item.itemId) >= 0) {
+                if (!feedCounts[item.itemId]) feedCounts[item.itemId] = { count: 0, totalWeight: 0 };
+                feedCounts[item.itemId].count++;
+                feedCounts[item.itemId].totalWeight += item.weight;
+            }
+        }
+    }
+
+    if (Object.keys(feedCounts).length === 0) {
+        body.innerHTML = '<div style="text-align:center;color:#888;padding:20px;">\u80CC\u5305\u4E2D\u6CA1\u6709\u53EF\u7528\u7684\u9972\u6599\uFF01<br><span style="font-size:0.85rem;">\u53EF\u7528\u9972\u6599\uFF1A' +
+            animal.acceptFeeds.map(function(fid) { return CROPS[fid].icon + CROPS[fid].name; }).join('\u3001') + '</span></div>';
+        document.getElementById('feed-modal').classList.add('show');
+        return;
+    }
+
+    for (var fi = 0; fi < animal.acceptFeeds.length; fi++) {
+        var feedId = animal.acceptFeeds[fi];
+        if (!feedCounts[feedId]) continue;
+        var feedCrop = CROPS[feedId];
+        var isBest = feedId === animal.bestFeed;
+        var efficiency = isBest ? 1.0 : 0.5;
+        var weightGain = (animal.feedWeightGain * efficiency).toFixed(1);
+        var timeReduce = Math.round(animal.feedTimeReduce * efficiency);
+
+        var opt = document.createElement('div');
+        opt.className = 'feed-option' + (isBest ? ' best-feed' : '');
+        opt.onclick = (function(fid) { return function() { feedAnimal(fid); }; })(feedId);
+        var optHtml = '<div style="font-size:1.5rem;">' + feedCrop.icon + '</div>';
+        optHtml += '<div class="feed-info">';
+        optHtml += '<div class="feed-name">' + feedCrop.name + (isBest ? ' <span class="feed-best-tag">\u2B50\u6700\u7231</span>' : '') + '</div>';
+        optHtml += '<div class="feed-detail">\u5E73\u5747\u91CD\u91CF: ' + (feedCounts[feedId].totalWeight / feedCounts[feedId].count).toFixed(1) + 'kg</div>';
+        optHtml += '<div class="feed-bonus">\u{1F4AA} +' + weightGain + 'kg | \u23F1\uFE0F -' + timeReduce + 's' + (isBest ? ' (\u6700\u4F73)' : ' (50%\u6548\u679C)') + '</div>';
+        optHtml += '</div>';
+        optHtml += '<div class="feed-count">\u00D7' + feedCounts[feedId].count + '</div>';
+        opt.innerHTML = optHtml;
+        body.appendChild(opt);
+    }
+
+    document.getElementById('feed-modal').classList.add('show');
+}
+
+function closeFeedModal() {
+    document.getElementById('feed-modal').classList.remove('show');
+    feedModalPenIndex = -1;
+}
+
+function feedAnimal(feedCropId) {
+    if (feedModalPenIndex < 0) return;
+    var pen = state.pens[feedModalPenIndex];
+    if (!pen.animalId) { closeFeedModal(); return; }
+    var animal = ANIMALS[pen.animalId] || HIDDEN_ANIMALS[pen.animalId];
+
+    if (pen.fedCount >= animal.maxFeeds) {
+        showToast('\u5DF2\u8FBE\u5230\u6700\u5927\u5582\u517B\u6B21\u6570\uFF01');
+        closeFeedModal();
+        return;
+    }
+
+    // Find the feed item in backpack (use the first one)
+    var feedIndex = -1;
+    for (var i = 0; i < state.backpack.length; i++) {
+        if (state.backpack[i].type === 'crop' && state.backpack[i].itemId === feedCropId) {
+            feedIndex = i;
+            break;
+        }
+    }
+    if (feedIndex < 0) {
+        showToast('\u80CC\u5305\u4E2D\u6CA1\u6709' + CROPS[feedCropId].name + '\u4E86\uFF01');
+        closeFeedModal();
+        return;
+    }
+
+    var isBest = feedCropId === animal.bestFeed;
+    var efficiency = isBest ? 1.0 : 0.5;
+
+    // Feed weight also affects gain slightly
+    var feedItem = state.backpack[feedIndex];
+    var feedCrop = CROPS[feedCropId];
+    var feedBaseWeight = (feedCrop.weightRange[0] + feedCrop.weightRange[1]) / 2;
+    var feedWeightBonus = feedItem.weight / feedBaseWeight; // heavier feed = more gain
+
+    var weightGain = animal.feedWeightGain * efficiency * feedWeightBonus;
+    var timeReduce = Math.round(animal.feedTimeReduce * efficiency);
+
+    pen.currentWeight += weightGain;
+    pen.currentWeight = Math.min(animal.weightRange[1], Math.round(pen.currentWeight * 100) / 100);
+    pen.bonusTime += timeReduce;
+    pen.fedCount++;
+
+    // Remove feed from backpack
+    state.backpack.splice(feedIndex, 1);
+
+    showToast(animal.icon + ' \u5403\u4E86 ' + feedCrop.icon + feedCrop.name +
+        '\uFF01+' + weightGain.toFixed(1) + 'kg, -' + timeReduce + 's' +
+        (isBest ? ' (\u6700\u7231\u{1F496})' : ''));
+
+    updateStats();
+    updateRanchGrid();
+
+    // Refresh modal if still open
+    if (pen.fedCount < animal.maxFeeds) {
+        openFeedModal(feedModalPenIndex);
+    } else {
+        closeFeedModal();
+    }
+}
+
+function doFeedSilent(penIdx, feedCropId) {
+    var pen = state.pens[penIdx];
+    if (!pen.animalId) return null;
+    var animal = ANIMALS[pen.animalId] || HIDDEN_ANIMALS[pen.animalId];
+    if (pen.fedCount >= animal.maxFeeds) return null;
+    var feedIndex = -1;
+    for (var i = 0; i < state.backpack.length; i++) {
+        if (state.backpack[i].type === 'crop' && state.backpack[i].itemId === feedCropId) { feedIndex = i; break; }
+    }
+    if (feedIndex < 0) return null;
+    var isBest = feedCropId === animal.bestFeed;
+    var efficiency = isBest ? 1.0 : 0.5;
+    var feedItem = state.backpack[feedIndex];
+    var feedCrop = CROPS[feedCropId];
+    var feedBaseWeight = (feedCrop.weightRange[0] + feedCrop.weightRange[1]) / 2;
+    var feedWeightBonus = feedItem.weight / feedBaseWeight;
+    var weightGain = animal.feedWeightGain * efficiency * feedWeightBonus;
+    var timeReduce = Math.round(animal.feedTimeReduce * efficiency);
+    pen.currentWeight += weightGain;
+    pen.currentWeight = Math.min(animal.weightRange[1], Math.round(pen.currentWeight * 100) / 100);
+    pen.bonusTime += timeReduce;
+    pen.fedCount++;
+    state.backpack.splice(feedIndex, 1);
+    updateStats(); updateRanchGrid();
+    return { animalName: animal.name, feedName: feedCrop.name, wg: weightGain, tr: timeReduce, best: isBest };
+}
+
+// ==================== BACKPACK ====================
+function renderBackpack() {
+    var grid = document.getElementById('backpack-grid');
+    grid.innerHTML = '';
+    if (state.backpack.length === 0) {
+        grid.innerHTML = '<div class="bp-empty">\u80CC\u5305\u7A7A\u7A7A\u5982\u4E5F\uFF0C\u53BB\u79CD\u70B9\u4EC0\u4E48\u5427\uFF01</div>';
+        document.getElementById('bp-summary').innerText = '';
+        return;
+    }
+    var totalValue = 0;
+    var cropCount = 0, meatCount = 0;
+    for (var i = 0; i < state.backpack.length; i++) {
+        var item = state.backpack[i];
+        if (item.type === 'crop') { totalValue += getCropSellPrice(item.itemId, item.weight); cropCount++; }
+        else { totalValue += getMeatSellPrice(item.itemId, item.weight); meatCount++; }
+    }
+    document.getElementById('bp-summary').innerText = '\u5171 ' + state.backpack.length + ' \u4EF6 (\u83DC' + cropCount + '/\u8089' + meatCount + ') | \u4F30\u503C \u{1F4B0}' + totalValue;
+
+    for (var i = 0; i < state.backpack.length; i++) {
+        var item = state.backpack[i];
+        var isCrop = item.type === 'crop';
+        var def = isCrop ? (CROPS[item.itemId] || HIDDEN_CROPS[item.itemId]) : (ANIMALS[item.itemId] || HIDDEN_ANIMALS[item.itemId]);
+        var sellPrice = isCrop ? getCropSellPrice(item.itemId, item.weight) : getMeatSellPrice(item.itemId, item.weight);
+        var wr = isCrop ? def.weightRange : def.weightRange;
+        var norm = Math.min(1, Math.max(0, (item.weight - wr[0]) / (wr[1] - wr[0])));
+        var iconSize = 1.3 + norm * 1.8;
+        var isHidden = def.hidden;
+
+        var el = document.createElement('div');
+        el.className = 'bp-item';
+        if (isHidden) el.style.borderColor = '#FFD700';
+        el.onclick = (function(idx) { return function() { sellItem(idx); }; })(i);
+        el.title = '\u70B9\u51FB\u51FA\u552E';
+        var html = '<div class="bp-icon" style="font-size:' + iconSize.toFixed(1) + 'rem;">' + def.icon + '</div>';
+        html += '<div class="bp-name">' + def.name + (isHidden ? ' ✨' : '') + '</div>';
+        html += '<div class="bp-weight">\u2696\uFE0F ' + item.weight + 'kg</div>';
+        html += '<div class="bp-sell-price" style="color:#4CAF50;">\u{1F4B0} ' + sellPrice + '</div>';
+        var tagColor = isCrop ? '#4CAF50' : '#e91e63';
+        var tagText = isCrop ? '\u{1F33E}\u83DC' : '\u{1F969}\u8089';
+        if (isHidden) { tagColor = '#FFD700'; tagText = '✨稀有'; }
+        html += '<div class="bp-type-tag" style="background:' + tagColor + ';color:#fff;">' + tagText + '</div>';
+        el.innerHTML = html;
+        grid.appendChild(el);
+    }
+}
+
+function sellItem(index) {
+    var item = state.backpack[index];
+    var isCrop = item.type === 'crop';
+    var def = isCrop ? (CROPS[item.itemId] || HIDDEN_CROPS[item.itemId]) : (ANIMALS[item.itemId] || HIDDEN_ANIMALS[item.itemId]);
+    var price = isCrop ? getCropSellPrice(item.itemId, item.weight) : getMeatSellPrice(item.itemId, item.weight);
+    state.coins += price;
+    state.backpack.splice(index, 1);
+    showToast('\u51FA\u552E ' + def.name + '\uFF08' + item.weight + 'kg\uFF09\uFF0C\u83B7\u5F97 \u{1F4B0}' + price);
+    updateStats();
+    renderBackpack();
+}
+
+function sellAllBackpack() {
+    if (state.backpack.length === 0) { showToast('\u80CC\u5305\u662F\u7A7A\u7684'); return; }
+    var total = 0;
+    for (var i = 0; i < state.backpack.length; i++) {
+        var item = state.backpack[i];
+        total += item.type === 'crop' ? getCropSellPrice(item.itemId, item.weight) : getMeatSellPrice(item.itemId, item.weight);
+    }
+    var count = state.backpack.length;
+    state.coins += total;
+    state.backpack = [];
+    showToast('\u51FA\u552E ' + count + ' \u4EF6\uFF0C\u83B7\u5F97 \u{1F4B0}' + total);
+    updateStats(); renderBackpack();
+}
+
+function sellAllCrops() {
+    var total = 0, count = 0;
+    var newBp = [];
+    for (var i = 0; i < state.backpack.length; i++) {
+        var item = state.backpack[i];
+        if (item.type === 'crop') {
+            total += getCropSellPrice(item.itemId, item.weight);
+            count++;
+        } else {
+            newBp.push(item);
+        }
+    }
+    if (count === 0) { showToast('\u6CA1\u6709\u83DC\u53EF\u5356'); return; }
+    state.coins += total;
+    state.backpack = newBp;
+    showToast('\u51FA\u552E ' + count + ' \u4EF6\u519C\u4EA7\u54C1\uFF0C\u83B7\u5F97 \u{1F4B0}' + total);
+    updateStats(); renderBackpack();
+}
+
+function sellAllMeat() {
+    var total = 0, count = 0;
+    var newBp = [];
+    for (var i = 0; i < state.backpack.length; i++) {
+        var item = state.backpack[i];
+        if (item.type === 'meat') {
+            total += getMeatSellPrice(item.itemId, item.weight);
+            count++;
+        } else {
+            newBp.push(item);
+        }
+    }
+    if (count === 0) { showToast('\u6CA1\u6709\u8089\u53EF\u5356'); return; }
+    state.coins += total;
+    state.backpack = newBp;
+    showToast('\u51FA\u552E ' + count + ' \u4EF6\u7565\u4EA7\u54C1\uFF0C\u83B7\u5F97 \u{1F4B0}' + total);
+    updateStats(); renderBackpack();
+}
+
+// ==================== MARKET / K-LINE ====================
+function setMarketType(type) {
+    marketType = type;
+    var tabs = document.getElementById('market-type-tabs').children;
+    for (var i = 0; i < tabs.length; i++) { tabs[i].classList.remove('active'); }
+    if (type === 'crop') { tabs[0].classList.add('active'); selectedMarketItem = 'wheat'; }
+    else { tabs[1].classList.add('active'); selectedMarketItem = 'chicken'; }
+    renderMarket();
+}
+
+function renderMarket() {
+    var sel = document.getElementById('market-selector');
+    sel.innerHTML = '';
+    var items = marketType === 'crop' ? CROPS : ANIMALS;
+    var keys = Object.keys(items);
+    for (var i = 0; i < keys.length; i++) {
+        var item = items[keys[i]];
+        var btn = document.createElement('button');
+        btn.innerText = item.icon + ' ' + item.name;
+        btn.className = selectedMarketItem === item.id ? 'active' : '';
+        btn.onclick = (function(id) { return function() { selectedMarketItem = id; renderMarket(); }; })(item.id);
+        sel.appendChild(btn);
+    }
+
+    // Type tabs
+    var tabs = document.getElementById('market-type-tabs').children;
+    for (var i = 0; i < tabs.length; i++) { tabs[i].classList.remove('active'); }
+    if (marketType === 'crop') tabs[0].classList.add('active');
+    else tabs[1].classList.add('active');
+
+    drawChart();
+}
+
+function drawChart() {
+    var m = market[selectedMarketItem];
+    if (!m) return;
+    var def = CROPS[selectedMarketItem] || ANIMALS[selectedMarketItem];
+
+    var canvas = document.getElementById('chart-canvas');
+    var container = canvas.parentElement;
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+    var ctx = canvas.getContext('2d');
+    var W = canvas.width, H = canvas.height;
+    var data = m.history;
+
+    var min = data[0], max = data[0];
+    var sum = 0;
+    for (var i = 0; i < data.length; i++) {
+        if (data[i] < min) min = data[i];
+        if (data[i] > max) max = data[i];
+        sum += data[i];
+    }
+    var avg = Math.round(sum / data.length);
+    var current = data[data.length - 1];
+    var prev = data.length > 1 ? data[data.length - 2] : current;
+    var change = current - prev;
+    var changePct = prev !== 0 ? ((change / prev) * 100).toFixed(1) : '0.0';
+    var isUp = change >= 0;
+
+    document.getElementById('market-item-name').innerText = def.icon + ' ' + def.name;
+    document.getElementById('market-current-price').innerText = '\u{1F4B0} ' + current;
+    document.getElementById('market-current-price').style.color = isUp ? '#f44336' : '#4CAF50';
+    document.getElementById('market-price-change').innerHTML =
+        '<span style="color:' + (isUp ? '#f44336' : '#4CAF50') + '">' + (isUp ? '\u25B2' : '\u25BC') + ' ' + Math.abs(change) + ' (' + (isUp ? '+' : '') + changePct + '%)</span>';
+    document.getElementById('chart-high').innerText = '\u6700\u9AD8: \u{1F4B0}' + max;
+    document.getElementById('chart-low').innerText = '\u6700\u4F4E: \u{1F4B0}' + min;
+    document.getElementById('chart-avg').innerText = '\u5747\u4EF7: \u{1F4B0}' + avg;
+
+    ctx.clearRect(0, 0, W, H);
+    var pad = { top: 20, bottom: 25, left: 45, right: 15 };
+    var chartW = W - pad.left - pad.right;
+    var chartH = H - pad.top - pad.bottom;
+    var range = max - min || 1;
+
+    // Grid
+    ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+    ctx.lineWidth = 1;
+    for (var i = 0; i <= 4; i++) {
+        var y = pad.top + (chartH / 4) * i;
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+        ctx.fillStyle = '#666'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+        ctx.fillText(Math.round(max - (range / 4) * i), pad.left - 4, y + 3);
+    }
+
+    // Base line
+    var baseY = pad.top + chartH - ((def.baseSell - min) / range) * chartH;
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath(); ctx.moveTo(pad.left, baseY); ctx.lineTo(W - pad.right, baseY); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Candles
+    var candleCount = data.length;
+    var candleWidth = Math.max(2, Math.floor(chartW / candleCount * 0.65));
+    var gap = chartW / candleCount;
+
+    for (var i = 1; i < candleCount; i++) {
+        var open = data[i - 1];
+        var close = data[i];
+        var high = Math.max(open, close) + Math.random() * range * 0.015;
+        var low = Math.min(open, close) - Math.random() * range * 0.015;
+        var x = pad.left + i * gap;
+        var bullish = close >= open;
+
+        var wickTop = pad.top + chartH - ((high - min) / range) * chartH;
+        var wickBot = pad.top + chartH - ((low - min) / range) * chartH;
+        ctx.strokeStyle = bullish ? '#f44336' : '#4CAF50';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(x, wickTop); ctx.lineTo(x, wickBot); ctx.stroke();
+
+        var bodyTop = pad.top + chartH - ((Math.max(open, close) - min) / range) * chartH;
+        var bodyBot = pad.top + chartH - ((Math.min(open, close) - min) / range) * chartH;
+        var bodyH = Math.max(1, bodyBot - bodyTop);
+        ctx.fillStyle = bullish ? '#f44336' : '#4CAF50';
+        ctx.fillRect(x - candleWidth / 2, bodyTop, candleWidth, bodyH);
+    }
+
+    // Current price line
+    var curY = pad.top + chartH - ((current - min) / range) * chartH;
+    ctx.strokeStyle = isUp ? 'rgba(244,67,54,0.5)' : 'rgba(76,175,80,0.5)';
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(pad.left, curY); ctx.lineTo(W - pad.right, curY); ctx.stroke();
+    ctx.setLineDash([]);
+}
+
+// ==================== TOAST ====================
+var toastTimeout;
+function showToast(msg) {
+    var t = document.getElementById('toast');
+    t.innerText = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+// ==================== GAME LOOP ====================
+var marketTickCounter = 0;
+function gameLoop() {
+    if (challengeEnded) return;
+    var now = Date.now();
+    if (now - state.lastTick > 100) {
+        updateFarmGrid();
+        updateRanchGrid();
+        state.lastTick = now;
+    }
+    marketTickCounter++;
+    if (marketTickCounter >= 30) {
+        marketTickCounter = 0;
+        tickMarket();
+        renderCropShop();
+        if (document.getElementById('tab-ranch').classList.contains('active')) renderAnimalShop();
+        if (document.getElementById('tab-market').classList.contains('active')) drawChart();
+        if (document.getElementById('tab-backpack').classList.contains('active')) renderBackpack();
+        if (document.getElementById('tab-orders').classList.contains('active')) renderOrders();
+    }
+    autoTick();
+    tickOrders();
+    tickInvestments();
+    updateChallengeBar();
+    // Refresh talent tab investments display
+    if (document.getElementById('tab-talents').classList.contains('active')) renderTalentTab();
+}
+
+// ==================== AUTOMATION ENGINE ====================
+var autoEnabled = false;
+var autoLog = [];
+var AUTO_LOG_MAX = 200;
+var autoStats = { earned:0, cropsSold:0, meatSold:0, cropsHarv:0, animalsHarv:0, feeds:0 };
+var autoSellThresholds = {};
+var autoFeedConfig = {};
+var autoTickCount = 0;
+
+function getTimeStr() {
+    var d=new Date(); return (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes()+':'+(d.getSeconds()<10?'0':'')+d.getSeconds();
+}
+
+function addAutoLog(cls, msg) {
+    autoLog.unshift({t:getTimeStr(), c:cls, m:msg});
+    if (autoLog.length > AUTO_LOG_MAX) autoLog.pop();
+    if (document.getElementById('tab-auto').classList.contains('active')) renderAutoLog();
+}
+
+function renderAutoLog() {
+    var p = document.getElementById('log-box'), h = '';
+    for (var i=0; i<autoLog.length; i++) {
+        var l = autoLog[i];
+        h += '<div class="log-line"><span class="log-time">['+l.t+']</span> <span class="'+l.c+'">'+l.m+'</span></div>';
+    }
+    p.innerHTML = h || '<div style="color:#555;text-align:center;padding:20px;">\u6682\u65E0\u65E5\u5FD7</div>';
+    document.getElementById('log-count').innerText = autoLog.length + ' \u6761';
+    document.getElementById('log-stats').innerHTML =
+        '\u{1F4B0}\u603B\u6536\u5165:<b style="color:#4CAF50">'+autoStats.earned+'</b> | '+
+        '\u{1F33E}\u6536\u83B7:<b>'+autoStats.cropsHarv+'</b> | '+
+        '\u{1F404}\u51FA\u680F:<b>'+autoStats.animalsHarv+'</b> | '+
+        '\u{1F37D}\uFE0F\u6295\u5582:<b>'+autoStats.feeds+'</b> | '+
+        '\u{1F4C8}\u5356\u51FA:<b>'+autoStats.cropsSold+'\u83DC/'+autoStats.meatSold+'\u8089</b>';
+}
+
+function clearAutoLog() { autoLog=[]; autoStats={earned:0,cropsSold:0,meatSold:0,cropsHarv:0,animalsHarv:0,feeds:0}; renderAutoLog(); }
+
+function toggleAuto() {
+    autoEnabled = document.getElementById('auto-master-chk').checked;
+    document.getElementById('auto-dot').className = 'auto-dot' + (autoEnabled ? ' on' : '');
+    if (autoEnabled) addAutoLog('log-act', '\u2705 \u81EA\u52A8\u5316\u5DF2\u542F\u52A8');
+    else addAutoLog('log-warn', '\u26D4 \u81EA\u52A8\u5316\u5DF2\u505C\u6B62');
+}
+
+function initAutoSelectors() {
+    var sel = document.getElementById('auto-farm-crop');
+    var prev = sel ? sel.value : '';
+    if (sel) {
+        sel.innerHTML = '';
+        var ks = Object.keys(CROPS);
+        for (var i=0; i<ks.length; i++) {
+            var c = CROPS[ks[i]];
+            if (state.level >= c.minLevel) {
+                var o = document.createElement('option'); o.value=c.id; o.text=c.icon+' '+c.name;
+                sel.appendChild(o);
+            }
+        }
+        if (prev) sel.value = prev;
+    }
+    var asel = document.getElementById('auto-ranch-animal');
+    prev = asel ? asel.value : '';
+    if (asel) {
+        asel.innerHTML = '';
+        var aks = Object.keys(ANIMALS);
+        for (var i=0; i<aks.length; i++) {
+            var a = ANIMALS[aks[i]];
+            if (state.level >= a.minLevel) {
+                var o = document.createElement('option'); o.value=a.id; o.text=a.icon+' '+a.name;
+                asel.appendChild(o);
+            }
+        }
+        if (prev) asel.value = prev;
+    }
+    // Feed config
+    var fl = document.getElementById('auto-feed-list');
+    if (fl) {
+        fl.innerHTML = '';
+        var aks = Object.keys(ANIMALS);
+        for (var i=0; i<aks.length; i++) {
+            var a = ANIMALS[aks[i]];
+            if (state.level < a.minLevel) continue;
+            if (!autoFeedConfig[a.id]) autoFeedConfig[a.id] = { feedId: a.bestFeed, count: a.maxFeeds };
+            var row = document.createElement('div'); row.className = 'auto-row';
+            var h = '<span style="font-size:1.1rem;">'+a.icon+'</span><label>'+a.name+'</label>';
+            h += '<label>\u9972\u6599:</label><select id="af-s-'+a.id+'" onchange="updFeedCfg()">';
+            for (var j=0; j<a.acceptFeeds.length; j++) {
+                var fid = a.acceptFeeds[j], fc = CROPS[fid], ib = fid===a.bestFeed;
+                h += '<option value="'+fid+'"'+(autoFeedConfig[a.id].feedId===fid?' selected':'')+'>'+fc.icon+fc.name+(ib?' \u2B50':'')+'</option>';
+            }
+            h += '</select><label>\u6B21:</label><input type="number" id="af-c-'+a.id+'" min="0" max="'+a.maxFeeds+'" value="'+autoFeedConfig[a.id].count+'" onchange="updFeedCfg()" style="width:50px;">';
+            h += '<span style="font-size:0.65rem;color:#888;">/'+a.maxFeeds+'</span>';
+            row.innerHTML = h; fl.appendChild(row);
+        }
+    }
+    // Sell thresholds - crops
+    var sc = document.getElementById('auto-sell-crops');
+    if (sc) {
+        sc.innerHTML = '';
+        var ks = Object.keys(CROPS);
+        for (var i=0; i<ks.length; i++) {
+            var c = CROPS[ks[i]];
+            if (autoSellThresholds[c.id] === undefined) autoSellThresholds[c.id] = 0;
+            var row = document.createElement('div'); row.className = 'auto-sell-row';
+            row.innerHTML = '<span style="font-size:1rem;">'+c.icon+'</span><label>'+c.name+' (\u57FA:'+c.baseSell+')</label><input type="number" id="as-'+c.id+'" min="0" value="'+autoSellThresholds[c.id]+'" onchange="updSellCfg()"><span style="font-size:0.65rem;color:#888;">0=\u4E0D\u5356</span>';
+            sc.appendChild(row);
+        }
+    }
+    var sa = document.getElementById('auto-sell-animals');
+    if (sa) {
+        sa.innerHTML = '';
+        var aks = Object.keys(ANIMALS);
+        for (var i=0; i<aks.length; i++) {
+            var a = ANIMALS[aks[i]];
+            if (autoSellThresholds[a.id] === undefined) autoSellThresholds[a.id] = 0;
+            var row = document.createElement('div'); row.className = 'auto-sell-row';
+            row.innerHTML = '<span style="font-size:1rem;">'+a.icon+'</span><label>'+a.name+' (\u57FA:'+a.baseSell+')</label><input type="number" id="as-'+a.id+'" min="0" value="'+autoSellThresholds[a.id]+'" onchange="updSellCfg()"><span style="font-size:0.65rem;color:#888;">0=\u4E0D\u5356</span>';
+            sa.appendChild(row);
+        }
+    }
+}
+
+function updFeedCfg() {
+    var aks = Object.keys(ANIMALS);
+    for (var i=0; i<aks.length; i++) {
+        var a = ANIMALS[aks[i]];
+        var s = document.getElementById('af-s-'+a.id), c = document.getElementById('af-c-'+a.id);
+        if (s && c) autoFeedConfig[a.id] = { feedId: s.value, count: parseInt(c.value)||0 };
+    }
+}
+
+function updSellCfg() {
+    var ks = Object.keys(CROPS);
+    for (var i=0; i<ks.length; i++) { var el = document.getElementById('as-'+ks[i]); if (el) autoSellThresholds[ks[i]] = parseInt(el.value)||0; }
+    ks = Object.keys(ANIMALS);
+    for (var i=0; i<ks.length; i++) { var el = document.getElementById('as-'+ks[i]); if (el) autoSellThresholds[ks[i]] = parseInt(el.value)||0; }
+}
+
+function autoTick() {
+    if (!autoEnabled) return;
+    autoTickCount++;
+    if (autoTickCount < 5) return;
+    autoTickCount = 0;
+    var now = Date.now();
+
+    // 1. Auto harvest + plant crops
+    if (document.getElementById('auto-farm-on') && document.getElementById('auto-farm-on').checked) {
+        for (var i=0; i<state.plots.length; i++) {
+            var p = state.plots[i];
+            if (!p.unlocked || !p.cropId) continue;
+            var c = CROPS[p.cropId] || HIDDEN_CROPS[p.cropId];
+            var sb = getTalentSpeedBonus(p.cropId);
+            var et = c.time * (1 - sb / 100);
+            if ((now - p.plantedAt)/1000 >= et) {
+                var res = harvestCrop(i, true);
+                if (res) { autoStats.cropsHarv++; addAutoLog('log-harv', '\u{1F33E} \u6536\u83B7 '+res.name+' '+res.weight+'kg'); }
+            }
+        }
+        var cropId = document.getElementById('auto-farm-crop') ? document.getElementById('auto-farm-crop').value : '';
+        if (cropId && CROPS[cropId] && state.level >= CROPS[cropId].minLevel) {
+            for (var i=0; i<state.plots.length; i++) {
+                if (state.plots[i].unlocked && !state.plots[i].cropId) {
+                    if (plantCrop(i, cropId, true)) {
+                        addAutoLog('log-buy', '\u{1F331} \u79CD\u690D '+CROPS[cropId].icon+CROPS[cropId].name+' \u{1F4B0}-'+CROPS[cropId].cost);
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Auto harvest + buy animals
+    for (var i=0; i<state.pens.length; i++) {
+        var pen = state.pens[i];
+        if (!pen.unlocked || !pen.animalId) continue;
+        var a = ANIMALS[pen.animalId] || HIDDEN_ANIMALS[pen.animalId];
+        var asb = getTalentSpeedBonus(pen.animalId);
+        var et = Math.max(10, (a.time * (1 - asb / 100)) - pen.bonusTime);
+        if ((now - pen.placedAt)/1000 >= et) {
+            var res = harvestAnimal(i, true);
+            if (res) { autoStats.animalsHarv++; addAutoLog('log-harv', '\u{1F404} \u51FA\u680F '+res.name+' '+res.weight+'kg'); }
+        }
+    }
+    if (document.getElementById('auto-ranch-on') && document.getElementById('auto-ranch-on').checked) {
+        var anId = document.getElementById('auto-ranch-animal') ? document.getElementById('auto-ranch-animal').value : '';
+        if (anId && ANIMALS[anId] && state.level >= ANIMALS[anId].minLevel) {
+            for (var i=0; i<state.pens.length; i++) {
+                if (state.pens[i].unlocked && !state.pens[i].animalId) {
+                    if (placeAnimal(i, anId, true)) {
+                        addAutoLog('log-buy', '\u{1F404} \u8D2D\u4E70 '+ANIMALS[anId].icon+ANIMALS[anId].name+' \u{1F4B0}-'+ANIMALS[anId].cost);
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Auto feed
+    for (var i=0; i<state.pens.length; i++) {
+        var pen = state.pens[i];
+        if (!pen.unlocked || !pen.animalId) continue;
+        var a = ANIMALS[pen.animalId] || HIDDEN_ANIMALS[pen.animalId];
+        var fsb = getTalentSpeedBonus(pen.animalId);
+        var et = Math.max(10, (a.time * (1 - fsb / 100)) - pen.bonusTime);
+        if ((now - pen.placedAt)/1000 >= et) continue; // already ready, skip feed
+        var cfg = autoFeedConfig[a.id];
+        if (!cfg || cfg.count <= 0) continue;
+        if (pen.fedCount >= cfg.count) continue;
+        if (pen.fedCount >= a.maxFeeds) continue;
+        var res = doFeedSilent(i, cfg.feedId);
+        if (res) {
+            autoStats.feeds++;
+            addAutoLog('log-feed', '\u{1F37D}\uFE0F '+res.animalName+' \u5403\u4E86 '+res.feedName+' +'+res.wg.toFixed(1)+'kg -'+res.tr+'s'+(res.best?' \u2B50':''));
+        }
+    }
+
+    // 4. Auto sell by threshold
+    var toRemove = [];
+    for (var i = state.backpack.length - 1; i >= 0; i--) {
+        var item = state.backpack[i];
+        var threshold = autoSellThresholds[item.itemId] || 0;
+        if (threshold <= 0) continue;
+        var curPrice = getCurrentPrice(item.itemId);
+        if (curPrice >= threshold) {
+            var isCrop = item.type === 'crop';
+            var def = isCrop ? (CROPS[item.itemId] || HIDDEN_CROPS[item.itemId]) : (ANIMALS[item.itemId] || HIDDEN_ANIMALS[item.itemId]);
+            var price = isCrop ? getCropSellPrice(item.itemId, item.weight) : getMeatSellPrice(item.itemId, item.weight);
+            state.coins += price;
+            autoStats.earned += price;
+            if (isCrop) autoStats.cropsSold++; else autoStats.meatSold++;
+            addAutoLog('log-sell', '\u{1F4C8} \u5356\u51FA '+def.icon+def.name+' '+item.weight+'kg \u{1F4B0}+'+price+' (\u884C\u60C5:'+curPrice+'\u2265\u9608\u503C:'+threshold+')');
+            state.backpack.splice(i, 1);
+        }
+    }
+    updateStats();
+    if (document.getElementById('tab-backpack').classList.contains('active')) renderBackpack();
+}
+
+// ==================== ORDER SYSTEM ====================
+var ORDER_INTERVAL = 120; // 2 minutes in seconds
+var ORDER_COUNT = 4;
+var orders = [];
+var orderNextRefresh = 0;
+
+var NPCS = [
+    { name:'\u8001\u738B', avatar:'\u{1F468}\u200D\u{1F33E}', title:'\u9547\u4E0A\u7C97\u7CAE\u5E97\u8001\u677F',
+      reasons: {
+        wheat:'\u201C\u6700\u8FD1\u9762\u7C89\u5382\u8981\u8D76\u4E00\u6279\u8BA2\u5355\uFF0C\u6025\u9700\u5C0F\u9EA6\u3002\u201D',
+        corn:'\u201C\u4E61\u91CC\u8981\u529E\u4E30\u6536\u8282\u7684\u722C\u7389\u7C73\u5927\u8D5B\uFF0C\u5F97\u591A\u5907\u4E9B\u3002\u201D',
+        soybean:'\u201C\u8C46\u8150\u574A\u7684\u8001\u5468\u8BF4\u4E0B\u5468\u8981\u52A0\u91CF\u751F\u4EA7\uFF0C\u539F\u6599\u4E0D\u591F\u4E86\u3002\u201D',
+        carrot:'\u201C\u51AC\u5B58\u7684\u80E1\u841D\u535C\u5FEB\u5356\u5B8C\u4E86\uFF0C\u5F97\u8865\u4E00\u6279\u8D27\u3002\u201D',
+        grass:'\u201C\u9644\u8FD1\u7684\u7267\u573A\u8349\u6599\u7D27\u5F20\uFF0C\u6211\u5E2E\u4ED6\u4EEC\u6536\u4E00\u6279\u3002\u201D',
+        potato:'\u201C\u5FEB\u8FC7\u5E74\u4E86\uFF0C\u5BB6\u5BB6\u6237\u6237\u90FD\u8981\u56E4\u571F\u8C46\uFF0C\u4F9B\u4E0D\u5E94\u6C42\u554A\u3002\u201D',
+        tomato:'\u201C\u8D85\u5E02\u641E\u4FC3\u9500\uFF0C\u756A\u8304\u7F3A\u8D27\u4E25\u91CD\uFF0C\u6025\u7528\uFF01\u201D',
+        strawberry:'\u201C\u8702\u86CB\u7CD5\u5E97\u7684\u5C0F\u674E\u8981\u505A\u8349\u8393\u5B63\u8282\u9650\u5B9A\uFF0C\u5927\u91CF\u6536\u8D2D\u3002\u201D',
+        watermelon:'\u201C\u590F\u5929\u5230\u4E86\uFF0C\u51B7\u996E\u5E97\u8981\u505A\u897F\u74DC\u6C41\uFF0C\u5927\u6279\u91C7\u8D2D\u3002\u201D'
+      }
+    },
+    { name:'\u5218\u5927\u5AC2', avatar:'\u{1F469}\u200D\u{1F373}', title:'\u53BF\u57CE\u9152\u697C\u5927\u53A8',
+      reasons: {
+        wheat:'\u201C\u5E97\u91CC\u8981\u505A\u65B0\u83DC\u5C1D\u9C9C\uFF0C\u9762\u7C89\u8981\u7528\u597D\u7684\u3002\u201D',
+        corn:'\u201C\u7389\u7C73\u70D8\u5C0F\u9762\u5305\u6700\u8FD1\u5356\u7206\u4E86\uFF0C\u8981\u591A\u8FDB\u4E9B\u7389\u7C73\u3002\u201D',
+        soybean:'\u201C\u5E97\u91CC\u8981\u505A\u8C46\u74E3\u9171\u916C\u7684\u65B0\u83DC\uFF0C\u9700\u8981\u65B0\u9C9C\u5927\u8C46\u3002\u201D',
+        carrot:'\u201C\u4E0A\u6D77\u5BA2\u4EBA\u70B9\u540D\u8981\u80E1\u841D\u535C\u70E7\u725B\u8169\uFF0C\u5F97\u5907\u5145\u8DB3\u3002\u201D',
+        grass:'\u201C\u670B\u53CB\u5F00\u7684\u833A\u8349\u5496\u5561\u99C6\u9700\u8981\u88C5\u9970\u7528\u8349\u3002\u201D',
+        potato:'\u201C\u70B8\u85AF\u6761\u662F\u5E97\u91CC\u62DB\u724C\u5C0F\u5403\uFF0C\u6BCF\u5468\u7528\u91CF\u5F88\u5927\u3002\u201D',
+        tomato:'\u201C\u89BF\u5E08\u8981\u505A\u756A\u8304\u7096\u725B\u8169\u5957\u9910\uFF0C\u7D27\u6025\u91C7\u8D2D\u3002\u201D',
+        strawberry:'\u201C\u5E97\u91CC\u65B0\u4E0A\u7684\u8349\u8393\u6C99\u62C9\u5F88\u53D7\u6B22\u8FCE\uFF0C\u8981\u8FFD\u52A0\u8BA2\u5355\u3002\u201D',
+        watermelon:'\u201C\u5BA2\u4EBA\u8BF4\u6211\u4EEC\u7684\u51B0\u9547\u897F\u74DC\u662F\u4E00\u7EDD\uFF0C\u5F97\u5907\u8DB3\u8D27\u3002\u201D',
+        chicken:'\u201C\u5E97\u91CC\u7684\u767D\u659C\u9E21\u6700\u8FD1\u7279\u522B\u53D7\u6B22\u8FCE\uFF0C\u9700\u8981\u65B0\u9C9C\u9E21\u8089\u3002\u201D',
+        rabbit:'\u201C\u6709\u4F4D\u5BA2\u4EBA\u9884\u5B9A\u4E86\u5154\u8089\u706B\u9505\u5BA4\u4F1A\uFF0C\u91CF\u5F88\u5927\u3002\u201D',
+        goose:'\u201C\u8FD9\u5468\u672B\u6709\u5BB4\u5E2D\uFF0C\u5F97\u51C6\u5907\u70E4\u9E45\u3002\u201D',
+        pig:'\u201C\u5E97\u91CC\u7684\u62DB\u724C\u7EA2\u70E7\u8089\u53EF\u4E0D\u80FD\u65AD\u8D27\uFF01\u201D',
+        sheep:'\u201C\u5BA2\u4EBA\u8981\u529E\u5168\u7F8A\u5BA4\uFF0C\u5F97\u8FDB\u65B0\u9C9C\u7F8A\u8089\u3002\u201D',
+        cow:'\u201C\u725B\u6392\u662F\u5E97\u91CC\u9500\u91CF\u7B2C\u4E00\uFF0C\u4E00\u5929\u90FD\u4E0D\u80FD\u65AD\u3002\u201D'
+      }
+    },
+    { name:'\u5F20\u6821\u957F', avatar:'\u{1F468}\u200D\u{1F3EB}', title:'\u9547\u4E2D\u5B66\u540E\u52E4\u4E3B\u4EFB',
+      reasons: {
+        wheat:'\u201C\u5B66\u751F\u98DF\u5802\u7684\u9762\u98DF\u6D88\u8017\u5FEB\uFF0C\u9700\u8981\u8865\u5145\u5C0F\u9EA6\u3002\u201D',
+        corn:'\u201C\u5B66\u751F\u4EEC\u559C\u6B22\u5403\u7389\u7C73\u68D2\uFF0C\u98DF\u5802\u51C6\u5907\u52A0\u9910\u3002\u201D',
+        soybean:'\u201C\u5B66\u751F\u8425\u517B\u9910\u8981\u52A0\u8C46\u6D46\uFF0C\u9700\u8981\u4E00\u6279\u5927\u8C46\u3002\u201D',
+        carrot:'\u201C\u8425\u517B\u5E08\u8BF4\u5B69\u5B50\u4EEC\u8981\u591A\u5403\u80E1\u841D\u535C\u8865\u5145\u7EF4\u751F\u7D20\u3002\u201D',
+        potato:'\u201C\u5B66\u751F\u98DF\u5802\u7684\u571F\u8C46\u4E1D\u662F\u53D7\u6B22\u8FCE\u7684\u5BB6\u5E38\u83DC\u3002\u201D',
+        tomato:'\u201C\u98DF\u5802\u7684\u756A\u8304\u70AC\u86CB\u6BCF\u5929\u90FD\u88AB\u4E00\u62A2\u800C\u7A7A\u3002\u201D',
+        chicken:'\u201C\u8003\u8BD5\u5468\u7ED9\u5B66\u751F\u52A0\u9910\uFF0C\u8BA1\u5212\u505A\u9EC4\u7116\u9E21\u3002\u201D',
+        pig:'\u201C\u5B66\u751F\u8FD0\u52A8\u4F1A\u8981\u529E\u5E86\u529F\u5BA4\uFF0C\u9700\u8981\u5927\u91CF\u732A\u8089\u3002\u201D'
+      }
+    },
+    { name:'\u6797\u5AC7\u5AC7', avatar:'\u{1F469}\u200D\u{1F4BC}', title:'\u7F51\u7EA2\u7F8E\u98DF\u535A\u4E3B',
+      reasons: {
+        strawberry:'\u201C\u8981\u62CD\u4E00\u671F\u8349\u8393\u7F8E\u98DF\u89C6\u9891\uFF0C\u9700\u8981\u6700\u65B0\u9C9C\u7684\uFF01\u201D',
+        watermelon:'\u201C\u8981\u6311\u6218\u201C\u4E00\u4E2A\u4EBA\u5403\u5B8C\u6574\u4E2A\u897F\u74DC\u201D\u89C6\u9891\uFF01\u201D',
+        tomato:'\u201C\u8981\u505A\u4E00\u671F\u201C\u756A\u8304100\u79CD\u5403\u6CD5\u201D\u5408\u96C6\u3002\u201D',
+        chicken:'\u201C\u4E0B\u4E00\u671F\u89C6\u9891\u4E3B\u9898\u662F\u201C\u519C\u5BB6\u571F\u9E21\u5168\u90E8\u4F4D\u201D\u3002\u201D',
+        cow:'\u201C\u7C89\u4E1D\u60F3\u770B\u6211\u505A\u5168\u719F\u725B\u6392\u7684\u6559\u7A0B\uFF01\u201D',
+        pig:'\u201C\u8981\u505A\u4E00\u671F\u201C\u4E61\u6751\u6740\u732A\u996D\u201D\u4E3B\u9898\u89C6\u9891\u3002\u201D',
+        sheep:'\u201C\u6700\u8FD1\u8981\u62CD\u65B0\u7586\u7F8E\u98DF\u7CFB\u5217\uFF0C\u7F8A\u8089\u5FC5\u4E0D\u53EF\u5C11\u3002\u201D'
+      }
+    },
+    { name:'\u8D75\u5E72\u4E8B', avatar:'\u{1F468}\u200D\u2696\uFE0F', title:'\u53BF\u5546\u4F1A\u91C7\u8D2D\u7ECF\u7406',
+      reasons: {
+        wheat:'\u201C\u533A\u57DF\u7C97\u7CAE\u50A8\u5907\u4E0D\u8DB3\uFF0C\u4E0A\u7EA7\u8981\u6C42\u7D27\u6025\u91C7\u8D2D\u3002\u201D',
+        corn:'\u201C\u517B\u6B96\u573A\u7684\u7389\u7C73\u5E93\u5B58\u544A\u6025\uFF0C\u8981\u5E2E\u4ED6\u4EEC\u8865\u8D27\u3002\u201D',
+        soybean:'\u201C\u98DF\u54C1\u52A0\u5DE5\u5382\u7684\u5927\u8C46\u6CB9\u4EA7\u7EBF\u5373\u5C06\u590D\u5DE5\u3002\u201D',
+        grass:'\u201C\u53BF\u91CC\u7684\u7267\u4E1A\u5408\u4F5C\u793E\u8981\u7EDF\u4E00\u91C7\u8D2D\u8349\u6599\u3002\u201D',
+        potato:'\u201C\u85AF\u7247\u5382\u7684\u539F\u6750\u6599\u6548\u5B58\u5373\u5C06\u89E6\u5E95\u3002\u201D',
+        chicken:'\u201C\u51B7\u94FE\u7269\u6D41\u516C\u53F8\u8981\u51E0\u6279\u7981\u7C7B\u8D27\u6E90\u3002\u201D',
+        pig:'\u201C\u5E74\u8282\u5C06\u81F3\uFF0C\u5546\u4F1A\u8981\u50A8\u5907\u5E74\u8D27\u732A\u8089\u3002\u201D',
+        cow:'\u201C\u53BF\u91CC\u5F15\u8FDB\u4E86\u4E00\u5BB6\u725B\u8089\u52A0\u5DE5\u5382\uFF0C\u6025\u9700\u539F\u6599\u3002\u201D',
+        sheep:'\u201C\u8FDB\u51FA\u53E3\u8D38\u6613\u516C\u53F8\u63A5\u4E86\u4E00\u5355\u7F8A\u8089\u51FA\u53E3\u8BA2\u5355\u3002\u201D'
+      }
+    },
+    { name:'\u5C0F\u9646', avatar:'\u{1F9D1}\u200D\u{1F52C}', title:'\u519C\u4E1A\u5927\u5B66\u7814\u7A76\u751F',
+      reasons: {
+        wheat:'\u201C\u5BFC\u5E08\u7684\u8BFE\u9898\u9700\u8981\u4E0D\u540C\u4EA7\u5730\u7684\u5C0F\u9EA6\u6837\u672C\u3002\u201D',
+        corn:'\u201C\u5B9E\u9A8C\u5BA4\u8981\u505A\u7389\u7C73\u6DC0\u7C89\u542B\u91CF\u68C0\u6D4B\uFF0C\u9700\u8981\u6837\u672C\u3002\u201D',
+        soybean:'\u201C\u6211\u5728\u7814\u7A76\u5927\u8C46\u86CB\u767D\u8D28\u542B\u91CF\uFF0C\u9700\u8981\u4E00\u6279\u6837\u672C\u3002\u201D',
+        carrot:'\u201C\u8BFE\u9898\u662F\u80E1\u841D\u535C\u7D20\u63D0\u53D6\u5DE5\u827A\u4F18\u5316\uFF0C\u8981\u65B0\u9C9C\u7684\u3002\u201D',
+        tomato:'\u201C\u6211\u4EEC\u5728\u505A\u756A\u8304\u7EA2\u7D20\u7684\u751F\u7269\u5229\u7528\u5EA6\u7814\u7A76\u3002\u201D',
+        strawberry:'\u201C\u5BFC\u5E08\u8BA9\u6211\u5206\u6790\u4E0D\u540C\u65BD\u80A5\u6761\u4EF6\u4E0B\u8349\u8393\u7684\u98CE\u5473\u7269\u8D28\u3002\u201D'
+      }
+    },
+    { name:'\u5468\u5A76\u5A46', avatar:'\u{1F475}', title:'\u6751\u53E3\u5C0F\u5356\u90E8\u8001\u677F\u5A18',
+      reasons: {
+        wheat:'\u201C\u8FD9\u51E0\u5929\u6751\u91CC\u529E\u559C\u4E8B\u591A\uFF0C\u9762\u7C89\u5F88\u7D27\u4FD7\u3002\u201D',
+        corn:'\u201C\u5B59\u5B50\u8981\u5403\u7092\u7389\u7C73\uFF0C\u5E97\u91CC\u4E5F\u6B63\u597D\u7F3A\u8D27\u3002\u201D',
+        carrot:'\u201C\u964D\u6E29\u4E86\uFF0C\u5BB6\u5BB6\u6237\u6237\u90FD\u6765\u4E70\u83DC\u505A\u6696\u9505\u3002\u201D',
+        potato:'\u201C\u6751\u91CC\u64E6\u571F\u8C46\u4E1D\u662F\u5BB6\u5E38\u4FBF\u996D\uFF0C\u5356\u5F97\u5FEB\u3002\u201D',
+        chicken:'\u201C\u5F20\u5BB6\u5AC2\u5B50\u5750\u6708\u5B50\uFF0C\u8981\u4E70\u53EA\u8001\u6BCD\u9E21\u7096\u6C64\u3002\u201D',
+        rabbit:'\u201C\u6751\u91CC\u8001\u4EBA\u8BF4\u5154\u5B50\u8089\u6ED9\u8865\uFF0C\u5E2E\u4ED6\u4EEC\u6536\u4E00\u6279\u3002\u201D'
+      }
+    },
+    { name:'\u5B59\u5E08\u5085', avatar:'\u{1F468}\u200D\u{1F527}', title:'\u5F00\u5F80\u53BF\u57CE\u7684\u8D27\u8F66\u53F8\u673A',
+      reasons: {
+        wheat:'\u201C\u53BF\u57CE\u7C73\u884C\u8BA9\u6211\u987A\u8DEF\u5E26\u6279\u5C0F\u9EA6\u56DE\u53BB\u3002\u201D',
+        corn:'\u201C\u6709\u4E2A\u5BA2\u6237\u4E34\u65F6\u52A0\u5355\u8981\u7389\u7C73\uFF0C\u5F97\u8D76\u7D27\u51D1\u8D27\u3002\u201D',
+        potato:'\u201C\u53BF\u57CE\u519C\u8D38\u5E02\u573A\u571F\u8C46\u65AD\u8D27\u4E86\uFF0C\u6025\u8981\u3002\u201D',
+        pig:'\u201C\u5C60\u5BB0\u573A\u8981\u6211\u660E\u5929\u4E00\u65E9\u8FD0\u4E00\u8F66\u732A\u8FC7\u53BB\u3002\u201D',
+        cow:'\u201C\u53BF\u57CE\u7684\u725B\u8089\u5E97\u50AC\u8D27\u50AC\u5F97\u7D27\uFF0C\u5F97\u5FEB\u70B9\u88C5\u8F66\u3002\u201D',
+        sheep:'\u201C\u8DEF\u4E0A\u63A5\u4E86\u4E2A\u6D3B\uFF0C\u5E2E\u6E05\u771F\u5BFA\u8FD0\u4E00\u6279\u7F8A\u3002\u201D'
+      }
+    }
+];
+
+var ORDER_TEMPLATES = [
+    { minLevel:1, items:[ {pool:['wheat'],       qtyRange:[3,6]} ], rewardMult:4.0, xpMult:6 },
+    { minLevel:1, items:[ {pool:['corn'],        qtyRange:[2,5]} ], rewardMult:4.5, xpMult:6 },
+    { minLevel:1, items:[ {pool:['wheat','corn'], qtyRange:[2,3]}, {pool:['wheat','corn'], qtyRange:[2,3]} ], rewardMult:5.0, xpMult:7 },
+    { minLevel:2, items:[ {pool:['soybean'],     qtyRange:[2,5]} ], rewardMult:4.0, xpMult:6 },
+    { minLevel:2, items:[ {pool:['carrot'],      qtyRange:[2,5]} ], rewardMult:4.0, xpMult:6 },
+    { minLevel:2, items:[ {pool:['carrot','soybean'], qtyRange:[2,4]}, {pool:['wheat'], qtyRange:[2,3]} ], rewardMult:5.0, xpMult:7 },
+    { minLevel:3, items:[ {pool:['grass'],       qtyRange:[2,4]} ], rewardMult:4.5, xpMult:6 },
+    { minLevel:3, items:[ {pool:['potato'],      qtyRange:[2,4]} ], rewardMult:4.5, xpMult:6 },
+    { minLevel:3, items:[ {pool:['chicken'],     qtyRange:[1,3]}, {pool:['corn'], qtyRange:[2,4]} ], rewardMult:5.0, xpMult:8, isMeat:true },
+    { minLevel:3, items:[ {pool:['goose'],       qtyRange:[1,2]} ], rewardMult:4.5, xpMult:7, isMeat:true },
+    { minLevel:3, items:[ {pool:['pig'],         qtyRange:[1,2]} ], rewardMult:4.5, xpMult:8, isMeat:true },
+    { minLevel:4, items:[ {pool:['tomato'],      qtyRange:[2,4]} ], rewardMult:4.0, xpMult:6 },
+    { minLevel:4, items:[ {pool:['chicken'],     qtyRange:[2,3]}, {pool:['potato','carrot'], qtyRange:[3,5]} ], rewardMult:5.5, xpMult:9, isMeat:true },
+    { minLevel:5, items:[ {pool:['strawberry'],  qtyRange:[2,4]} ], rewardMult:4.0, xpMult:6 },
+    { minLevel:5, items:[ {pool:['sheep'],       qtyRange:[1,2]} ], rewardMult:4.5, xpMult:8, isMeat:true },
+    { minLevel:5, items:[ {pool:['rabbit'],      qtyRange:[2,3]}, {pool:['carrot','grass'], qtyRange:[3,5]} ], rewardMult:5.5, xpMult:8, isMeat:true },
+    { minLevel:7, items:[ {pool:['watermelon'],  qtyRange:[1,3]} ], rewardMult:4.0, xpMult:6 },
+    { minLevel:7, items:[ {pool:['cow'],         qtyRange:[1,2]} ], rewardMult:4.5, xpMult:8, isMeat:true },
+    { minLevel:7, items:[ {pool:['cow'],         qtyRange:[1,2]}, {pool:['sheep'], qtyRange:[1,2]}, {pool:['grass'], qtyRange:[3,5]} ], rewardMult:6.0, xpMult:10, isMeat:true }
+];
+
+function generateOrders() {
+    orders = [];
+    orderNextRefresh = Date.now() + ORDER_INTERVAL * 1000;
+
+    var available = [];
+    for (var i = 0; i < ORDER_TEMPLATES.length; i++) {
+        if (state.level >= ORDER_TEMPLATES[i].minLevel) available.push(ORDER_TEMPLATES[i]);
+    }
+    if (available.length === 0) return;
+
+    // Shuffle and pick ORDER_COUNT unique templates
+    var shuffled = available.slice();
+    for (var i = shuffled.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = shuffled[i]; shuffled[i] = shuffled[j]; shuffled[j] = tmp;
+    }
+    var picked = shuffled.slice(0, Math.min(ORDER_COUNT, shuffled.length));
+
+    // Pick NPCs
+    var usedNpcs = [];
+    for (var oi = 0; oi < picked.length; oi++) {
+        var tmpl = picked[oi];
+        // Resolve items
+        var resolvedItems = [];
+        var totalReward = 0;
+        var totalXp = 0;
+        for (var ii = 0; ii < tmpl.items.length; ii++) {
+            var spec = tmpl.items[ii];
+            var itemId = spec.pool[Math.floor(Math.random() * spec.pool.length)];
+            var qty = spec.qtyRange[0] + Math.floor(Math.random() * (spec.qtyRange[1] - spec.qtyRange[0] + 1));
+            resolvedItems.push({ itemId: itemId, qty: qty });
+
+            var def = CROPS[itemId] || ANIMALS[itemId];
+            var curPrice = getCurrentPrice(itemId);
+            // 等级加成: 每级额外+15%收益，保证高等级订单持续有吸引力
+            var levelBonus = 1 + (state.level - 1) * 0.15;
+            totalReward += Math.round(curPrice * tmpl.rewardMult * qty * levelBonus);
+            totalXp += Math.round((def.xp || 10) * tmpl.xpMult * qty * levelBonus);
+        }
+
+        // Find NPC that has a reason for the first item
+        var firstItemId = resolvedItems[0].itemId;
+        var npc = null;
+        var tries = 0;
+        while (tries < 30) {
+            var candidate = NPCS[Math.floor(Math.random() * NPCS.length)];
+            if (usedNpcs.indexOf(candidate.name) < 0 && candidate.reasons[firstItemId]) {
+                npc = candidate;
+                usedNpcs.push(candidate.name);
+                break;
+            }
+            tries++;
+        }
+        if (!npc) {
+            // Fallback: pick any NPC
+            npc = NPCS[Math.floor(Math.random() * NPCS.length)];
+        }
+
+        var reason = (npc.reasons && npc.reasons[firstItemId]) || '\u201C\u6025\u9700\u8FD9\u6279\u8D27\uFF0C\u62DC\u6258\u4E86\uFF01\u201D';
+
+        orders.push({
+            id: Date.now() + '_' + oi,
+            npc: npc,
+            reason: reason,
+            items: resolvedItems,
+            reward: totalReward,
+            xp: totalXp,
+            fulfilled: false
+        });
+    }
+}
+
+function countBpItem(itemId, type) {
+    var c = 0;
+    for (var i = 0; i < state.backpack.length; i++) {
+        if (state.backpack[i].itemId === itemId && state.backpack[i].type === type) c++;
+    }
+    return c;
+}
+
+function canFulfillOrder(order) {
+    for (var i = 0; i < order.items.length; i++) {
+        var ri = order.items[i];
+        var type = CROPS[ri.itemId] ? 'crop' : 'meat';
+        if (countBpItem(ri.itemId, type) < ri.qty) return false;
+    }
+    return true;
+}
+
+function fulfillOrder(orderIdx) {
+    var order = orders[orderIdx];
+    if (!order || order.fulfilled) return;
+    if (!canFulfillOrder(order)) {
+        showToast('\u80CC\u5305\u4E2D\u7269\u54C1\u4E0D\u8DB3\uFF0C\u65E0\u6CD5\u4EA4\u4ED8\uFF01');
+        return;
+    }
+
+    // Remove items from backpack (take the first matching ones)
+    for (var i = 0; i < order.items.length; i++) {
+        var ri = order.items[i];
+        var type = CROPS[ri.itemId] ? 'crop' : 'meat';
+        var removed = 0;
+        for (var j = state.backpack.length - 1; j >= 0 && removed < ri.qty; j--) {
+            if (state.backpack[j].itemId === ri.itemId && state.backpack[j].type === type) {
+                state.backpack.splice(j, 1);
+                removed++;
+            }
+        }
+    }
+
+    state.coins += order.reward;
+    addXp(order.xp);
+    order.fulfilled = true;
+
+    var itemNames = [];
+    for (var i = 0; i < order.items.length; i++) {
+        var def = CROPS[order.items[i].itemId] || ANIMALS[order.items[i].itemId];
+        itemNames.push(def.icon + def.name + '\u00D7' + order.items[i].qty);
+    }
+    showToast('\u{1F4DC} \u8BA2\u5355\u5B8C\u6210\uFF01\u4EA4\u4ED8 ' + itemNames.join('+') + '\uFF0C\u83B7\u5F97 \u{1F4B0}' + order.reward + ' +' + order.xp + 'XP');
+
+    updateStats();
+    renderOrders();
+    if (document.getElementById('tab-backpack').classList.contains('active')) renderBackpack();
+}
+
+function renderOrders() {
+    var list = document.getElementById('order-list');
+    if (!list) return;
+    list.innerHTML = '';
+
+    // Timer
+    var timer = document.getElementById('order-timer');
+    var remaining = Math.max(0, Math.ceil((orderNextRefresh - Date.now()) / 1000));
+    var min = Math.floor(remaining / 60);
+    var sec = remaining % 60;
+    var timerClass = remaining < 60 ? 'timer-urgent' : '';
+    timer.innerHTML = '\u{1F504} \u4E0B\u6B21\u5237\u65B0: <span class="' + timerClass + '">' + min + ':' + (sec < 10 ? '0' : '') + sec + '</span>';
+
+    if (orders.length === 0) {
+        list.innerHTML = '<div class="order-empty">\u{1F4DC} \u6682\u65E0\u8BA2\u5355\uFF0C\u7B49\u5F85\u4E0B\u6B21\u5237\u65B0...</div>';
+        return;
+    }
+
+    for (var i = 0; i < orders.length; i++) {
+        var order = orders[i];
+        var canDo = canFulfillOrder(order);
+        var card = document.createElement('div');
+        card.className = 'order-card' + (order.fulfilled ? ' fulfilled' : '');
+
+        var h = '';
+        // XP bonus badge
+        h += '<div class="order-xp-bonus">+' + order.xp + ' XP</div>';
+
+        // NPC section
+        h += '<div class="order-npc">';
+        h += '<div class="order-npc-avatar">' + order.npc.avatar + '</div>';
+        h += '<div class="order-npc-info">';
+        h += '<div class="order-npc-name">' + order.npc.name + '</div>';
+        h += '<div class="order-npc-title">' + order.npc.title + '</div>';
+        h += '</div></div>';
+
+        // Reason
+        h += '<div class="order-reason">' + order.reason + '</div>';
+
+        // Items needed
+        h += '<div class="order-items">';
+        for (var j = 0; j < order.items.length; j++) {
+            var ri = order.items[j];
+            var def = CROPS[ri.itemId] || ANIMALS[ri.itemId];
+            var type = CROPS[ri.itemId] ? 'crop' : 'meat';
+            var have = countBpItem(ri.itemId, type);
+            var enough = have >= ri.qty;
+            h += '<div class="order-item-tag">';
+            h += '<span style="font-size:1.1rem;">' + def.icon + '</span>';
+            h += '<span>' + def.name + '</span>';
+            h += '<span class="' + (enough ? 'oi-have' : 'oi-need') + '">' + have + '/' + ri.qty + '</span>';
+            h += '</div>';
+        }
+        h += '</div>';
+
+        // Reward
+        h += '<div class="order-reward">';
+        h += '<span class="order-reward-coins">\u{1F4B0} ' + order.reward + '</span>';
+        h += '<span class="order-reward-xp">\u2728 ' + order.xp + ' XP</span>';
+        // Show premium %
+        var baseTotal = 0;
+        for (var j = 0; j < order.items.length; j++) {
+            var ri2 = order.items[j];
+            baseTotal += getCurrentPrice(ri2.itemId) * ri2.qty;
+        }
+        var premium = baseTotal > 0 ? Math.round((order.reward / baseTotal - 1) * 100) : 0;
+        h += '<span class="order-premium">\u2191' + premium + '% \u6EA2\u4EF7</span>';
+        h += '</div>';
+
+        // Button
+        if (order.fulfilled) {
+            h += '<button class="order-deliver-btn not-ready" disabled>\u2705 \u5DF2\u5B8C\u6210</button>';
+        } else if (canDo) {
+            h += '<button class="order-deliver-btn ready" onclick="fulfillOrder(' + i + ')">\u{1F4E6} \u4EA4\u4ED8\u8BA2\u5355</button>';
+        } else {
+            h += '<button class="order-deliver-btn not-ready" disabled>\u274C \u7269\u54C1\u4E0D\u8DB3</button>';
+        }
+
+        card.innerHTML = h;
+        list.appendChild(card);
+    }
+}
+
+function tickOrders() {
+    if (Date.now() >= orderNextRefresh) {
+        generateOrders();
+        if (document.getElementById('tab-orders').classList.contains('active')) renderOrders();
+    }
+    // Update timer if on orders tab
+    if (document.getElementById('tab-orders').classList.contains('active')) {
+        var timer = document.getElementById('order-timer');
+        var remaining = Math.max(0, Math.ceil((orderNextRefresh - Date.now()) / 1000));
+        var min = Math.floor(remaining / 60);
+        var sec = remaining % 60;
+        var timerClass = remaining < 60 ? 'timer-urgent' : '';
+        timer.innerHTML = '\u{1F504} \u4E0B\u6B21\u5237\u65B0: <span class="' + timerClass + '">' + min + ':' + (sec < 10 ? '0' : '') + sec + '</span>';
+    }
+}
+
+// ==================== INIT ====================
+function init() {
+    initState();
+    initMarket();
+    registerHiddenInMarket();
+    renderCropShop();
+    renderAnimalShop();
+    renderFarmGrid();
+    renderRanchGrid();
+    updateStats();
+    initAutoSelectors();
+    generateOrders();
+    challengeStartTime = Date.now();
+    challengeEnded = false;
+    setInterval(gameLoop, 100);
+}
+window.onload = init;
+</script>
+</body>
+</html>
